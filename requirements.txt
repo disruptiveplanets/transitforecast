@@ -2,6 +2,7 @@ astropy
 matplotlib
 numpy
 exoplanet
+lightkurve
 pymc3
 scipy
 theano
