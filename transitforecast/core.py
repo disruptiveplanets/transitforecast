@@ -6,7 +6,7 @@ import pymc3 as pm
 import theano.tensor as tt
 import transitleastsquares as tls
 from astropy import units
-from scipy.stats import median_absolute_deviation
+from scipy.stats import median_abs_deviation
 
 
 def build_model(
@@ -87,7 +87,7 @@ def build_model(
         f0 = pm.Normal(
             'f0',
             mu=np.median(lc.flux),
-            sd=median_absolute_deviation(lc.flux)
+            sd=median_abs_deviation(lc.flux, scale='normal')
         )
 
         # The full model
@@ -276,7 +276,7 @@ def plot_posterior_model(lc, trace):
 
     post_t0 = summary['median']['t0']
     post_period = summary['median']['period']
-    mad = median_absolute_deviation(lc.flux)
+    mad = median_abs_deviation(lc.flux, scale='normal')
 
     fig, axes = plt.subplots(2)
 
