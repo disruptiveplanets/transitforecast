@@ -1,0 +1,8 @@
+astropy
+matplotlib
+numpy
+exoplanet
+pymc3
+scipy
+theano
+transitleastsquares
