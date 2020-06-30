@@ -2,10 +2,12 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import exoplanet as xo
+import pandas as pd
 import pymc3 as pm
 import theano.tensor as tt
 import transitleastsquares as tls
 from astropy import units
+from scipy.signal import find_peaks
 from scipy.stats import chi2
 from scipy.stats import median_abs_deviation
 
@@ -352,3 +354,63 @@ def get_weights(pvalues):
 def get_tbar(tmforecast, weights):
     tbar = -(weights[:, np.newaxis]*tmforecast).sum(axis=0)
     return tbar
+
+
+def summarize_windows(traces, tforecast, tdistance=None):
+    # Define some useful variables
+    dt = np.median(np.diff(tforecast))
+    tdists = [tdistance]*len(traces)
+
+    # Define weights for the scenarios
+    ndata = traces[0].lc_model.shape[1]
+    nparam = 9  # Need a better way to define/find this value
+    dof = ndata - nparam
+    pvalues = get_pvalues(traces, dof)
+    weights = get_weights(pvalues)
+
+    # Loop through the scenarios, summarizing transit windows
+    windows_list = []
+    for i, trace in enumerate(traces):
+        tbar = get_tbar(trace.tmforecast, weights[i, :])
+
+        # Identify peaks
+        post_period = np.median(trace.period)
+        tdist = tdists[i]
+        if tdist is None:
+            # Treat peaks within P/2 as a single peak
+            tdist = 0.5*post_period
+            distance = int((tdist)/dt)
+        idx_peaks, _ = find_peaks(tbar, distance=distance)
+        tpeaks = tforecast[idx_peaks]
+
+        # Identify the median and lower and upper bound of the distribution
+        # surrounding each peak and it's corresponding TPM
+        medians = np.empty(tpeaks.size)
+        lowers = np.empty(tpeaks.size)
+        uppers = np.empty(tpeaks.size)
+        tpms = np.empty(tpeaks.size)
+        for ii, tpeak in enumerate(tpeaks):
+            idx = np.abs(tforecast-tpeak) < tdist
+            t_win = tforecast[idx]
+            tbar_win = tbar[idx]
+            medians[ii] = weighted_percentile(t_win, tbar_win, 50)
+            lowers[ii] = weighted_percentile(t_win, tbar_win, 2.5)
+            uppers[ii] = weighted_percentile(t_win, tbar_win, 97.5)
+            tpms[ii] = transit_probability_metric(
+                tbar, tforecast, lowers[ii], uppers[ii]
+            )
+
+        # Store results in a DataFrame
+        windows = pd.DataFrame({
+            'scenario': i*np.ones_like(tpeaks).astype('int'),
+            'tmedian': medians,
+            'tlower': lowers,
+            'tupper': uppers,
+            'tpm': tpms
+        })
+        windows_list.append(windows)
+
+    # Concatenate all results into a single DataFrame
+    windows = pd.concat(windows_list)
+
+    return windows
