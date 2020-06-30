@@ -1,8 +1,8 @@
 """`transitforecast` core functionality."""
+import astropy.table as at
 import matplotlib.pyplot as plt
 import numpy as np
 import exoplanet as xo
-import pandas as pd
 import pymc3 as pm
 import theano.tensor as tt
 import transitleastsquares as tls
@@ -402,7 +402,7 @@ def summarize_windows(traces, tforecast, tdistance=None):
             )
 
         # Store results in a DataFrame
-        windows = pd.DataFrame({
+        windows = at.Table({
             'scenario': i*np.ones_like(tpeaks).astype('int'),
             'tmedian': Time(medians, format='jd', scale='tdb'),
             'tlower': Time(lowers, format='jd', scale='tdb'),
@@ -412,6 +412,6 @@ def summarize_windows(traces, tforecast, tdistance=None):
         windows_list.append(windows)
 
     # Concatenate all results into a single DataFrame
-    windows = pd.concat(windows_list)
+    windows = at.vstack(windows_list)
 
     return windows
