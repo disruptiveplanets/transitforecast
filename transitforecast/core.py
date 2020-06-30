@@ -49,6 +49,7 @@ def build_model(
         Standard deviation of the radius estimate for the star in solar radii.
 
     tforecast : iterable
+        The times for the forecast. Assumes same units as ``lc.time``.
 
     Returns
     -------
