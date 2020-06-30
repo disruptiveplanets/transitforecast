@@ -19,6 +19,45 @@ def build_model(
     pri_m_star, pri_m_star_err, pri_r_star, pri_r_star_err,
     tforecast
 ):
+    """
+    Build the transit light curve model.
+
+    Parameters
+    ----------
+    lc : `~lightkurve.LightCurve`
+        A light curve object with the data.
+
+    pri_t0 : float
+        Initial guess for mid-transit time.
+
+    pri_p : float
+        Initial guess for period.
+
+    pri_rprs : float
+        Initial guess for planet-to-star radius ratio.
+
+    pri_m_star : float
+        Mean of the mass estimate for the star in solar masses.
+
+    pri_m_star_err : float
+        Standard deviation of the mass estimate for the star in solar masses.
+
+    pri_r_star : float
+        Mean of the radius estimate for the star in solar radii.
+
+    pri_r_star_err : float
+        Standard deviation of the radius estimate for the star in solar radii.
+
+    tforecast : iterable
+
+    Returns
+    -------
+    model : `~pymc3.model`
+        A model object.
+
+    map_soln : dict
+        A dictionary with the maximum a posteriori estimates of the variables.
+    """
     # Define the model for the light curve
     with pm.Model() as model:
         # Stellar mass
