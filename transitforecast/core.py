@@ -404,9 +404,9 @@ def summarize_windows(traces, tforecast, tdistance=None):
         # Store results in a DataFrame
         windows = at.Table({
             'scenario': i*np.ones_like(tpeaks).astype('int'),
-            'tmedian': Time(medians, format='jd', scale='tdb'),
-            'tlower': Time(lowers, format='jd', scale='tdb'),
-            'tupper': Time(uppers, format='jd', scale='tdb'),
+            'median': Time(medians, format='jd', scale='tdb'),
+            'lower': Time(lowers, format='jd', scale='tdb'),
+            'upper': Time(uppers, format='jd', scale='tdb'),
             'tpm': tpms
         })
         windows_list.append(windows)
