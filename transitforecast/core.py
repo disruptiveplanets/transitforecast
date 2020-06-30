@@ -191,7 +191,6 @@ def get_priors_from_tic(tic_id):
     return pri_m_star, pri_m_star_err, pri_r_star, pri_r_star_err
 
 
-# Optimize MAP estimates
 def plot_map_soln(lc, map_soln):
     map_p = map_soln['period']
     map_t0 = map_soln['t0']
