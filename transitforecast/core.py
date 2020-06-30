@@ -1,4 +1,5 @@
 """`transitforecast` core functionality."""
+import astroplan as ap
 import astropy.table as at
 import matplotlib.pyplot as plt
 import numpy as np
@@ -415,3 +416,61 @@ def summarize_windows(traces, tforecast, tdistance=None):
     windows = at.vstack(windows_list)
 
     return windows
+
+
+def observable_windows(target, site, constraints, windows):
+
+    # Determine the observable fraction of the window
+    fractions = []
+    for window in windows:
+        time_range = [window['lower'], window['upper']]
+        obs_table = ap.observability_table(
+            constraints,
+            site,
+            [target],
+            time_range=time_range,
+            time_grid_resolution=10*units.min
+        )
+        fractions.append(obs_table['fraction of time observable'][0])
+    windows['fraction'] = fractions
+    obs_windows = windows[windows['fraction'] > 0]
+
+    # Determine start and end times of observations and
+    # refine the observable fraction
+    starts = []
+    ends = []
+    refined_fractions = []
+    for window in obs_windows:
+        time_range = [window['lower'], window['upper']]
+        time_grid = ap.time_grid_from_range(
+            time_range, time_resolution=1*units.min
+        )
+        observable = ap.is_event_observable(
+            constraints,
+            site,
+            target,
+            time_grid
+        )[0]
+        starts.append(time_grid[observable].min())
+        ends.append(time_grid[observable].max())
+        refined_fractions.append(observable.sum()/len(observable))
+
+    obs_windows['fraction'] = refined_fractions
+    obs_windows['start'] = starts
+    obs_windows['end'] = ends
+
+    # Calculate the airmass of the target at important times
+    obs_windows['zstart'] = site.altaz(obs_windows['start'], target).secz
+    obs_windows['zmedian'] = site.altaz(obs_windows['median'], target).secz
+    obs_windows['zend'] = site.altaz(obs_windows['end'], target).secz
+
+    # Drop some columns and sort the rest
+    obs_windows.remove_columns(['lower', 'upper'])
+    cols = [
+        'scenario', 'tpm', 'fraction',
+        'start', 'median', 'end',
+        'zstart', 'zmedian', 'zend'
+    ]
+    obs_windows = obs_windows[cols]
+
+    return obs_windows
