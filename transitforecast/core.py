@@ -344,3 +344,7 @@ def get_pvalues(traces, dof):
         x2s[i, :] = trace.x2
     pvalues = chi2.sf(x2s, dof)
     return pvalues
+
+
+def get_weights(pvalues):
+    return pvalues/pvalues.sum()
