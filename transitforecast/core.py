@@ -7,6 +7,7 @@ import pymc3 as pm
 import theano.tensor as tt
 import transitleastsquares as tls
 from astropy import units
+from astropy.time import Time
 from scipy.signal import find_peaks
 from scipy.stats import chi2
 from scipy.stats import median_abs_deviation
@@ -403,9 +404,9 @@ def summarize_windows(traces, tforecast, tdistance=None):
         # Store results in a DataFrame
         windows = pd.DataFrame({
             'scenario': i*np.ones_like(tpeaks).astype('int'),
-            'tmedian': medians,
-            'tlower': lowers,
-            'tupper': uppers,
+            'tmedian': Time(medians, format='jd', scale='tdb'),
+            'tlower': Time(lowers, format='jd', scale='tdb'),
+            'tupper': Time(uppers, format='jd', scale='tdb'),
             'tpm': tpms
         })
         windows_list.append(windows)
