@@ -348,3 +348,8 @@ def get_pvalues(traces, dof):
 
 def get_weights(pvalues):
     return pvalues/pvalues.sum()
+
+
+def get_tbar(tmforecast, weights):
+    tbar = -(weights[:, np.newaxis]*tmforecast).sum(axis=0)
+    return tbar
