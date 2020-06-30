@@ -6,6 +6,7 @@ import pymc3 as pm
 import theano.tensor as tt
 import transitleastsquares as tls
 from astropy import units
+from scipy.stats import chi2
 from scipy.stats import median_abs_deviation
 
 
@@ -335,3 +336,11 @@ def integrate_tpm(tpm, time, lower_bound, upper_bound):
         time <= upper_bound
     )
     return np.trapz(tpm[idx], time[idx])/(upper_bound-lower_bound)
+
+
+def get_pvalues(traces, dof):
+    x2s = np.empty((len(traces), len(traces[0].x2)))
+    for i, trace in enumerate(traces):
+        x2s[i, :] = trace.x2
+    ps = chi2.sf(x2s, dof)
+    return ps
