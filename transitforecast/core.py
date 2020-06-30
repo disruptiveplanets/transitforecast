@@ -330,12 +330,12 @@ def weighted_percentile(data, weights, percentile):
     return np.interp(percentile, percentiles, data)
 
 
-def integrate_tpm(tpm, time, lower_bound, upper_bound):
+def transit_probability_metric(tbar, time, lower_bound, upper_bound):
     idx = np.logical_and(
         time >= lower_bound,
         time <= upper_bound
     )
-    return np.trapz(tpm[idx], time[idx])/(upper_bound-lower_bound)
+    return np.trapz(tbar[idx], time[idx])/(upper_bound-lower_bound)
 
 
 def get_pvalues(traces, dof):
