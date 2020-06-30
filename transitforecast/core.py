@@ -342,5 +342,5 @@ def get_pvalues(traces, dof):
     x2s = np.empty((len(traces), len(traces[0].x2)))
     for i, trace in enumerate(traces):
         x2s[i, :] = trace.x2
-    ps = chi2.sf(x2s, dof)
-    return ps
+    pvalues = chi2.sf(x2s, dof)
+    return pvalues
