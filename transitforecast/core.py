@@ -307,16 +307,22 @@ def plot_map_soln(lc, map_soln):
     return fig, axes
 
 
-def sample_from_model(model, map_soln):
+def sample_from_model(
+    model, map_soln, tune=500, draws=500, chains=8, cores=8, step=None
+):
+    if step is None:
+        step = xo.get_dense_nuts_step(target_accept=0.95)
+
     with model:
         trace = pm.sample(
-            tune=500,
-            draws=500,
+            tune=tune,
+            draws=draws,
             start=map_soln,
-            chains=8,
-            cores=8,
-            step=xo.get_dense_nuts_step(target_accept=0.95)
+            chains=chains,
+            cores=cores,
+            step=step
         )
+
     return trace
 
 
