@@ -258,6 +258,26 @@ def get_priors_from_tic(tic_id):
 
 
 def plot_map_soln(lc, map_soln):
+    """
+    Plot the maximum a posteriori solution for a transit model.
+
+    Parameters
+    ----------
+    lc : `~lightkurve.LightCurve`
+        A light curve object with the data.
+
+    map_soln : dict
+        A dictionary with the maximum a posteriori estimates of the variables.
+
+    Returns
+    -------
+    fig : `~matplotlib.figure.Figure`
+        A Figure object.
+
+    axes : `~matplotlib.axes.Axes`
+        An Axes object with plots of the MAP solution as function of time and
+        orbital phase.
+    """
     map_p = map_soln['period']
     map_t0 = map_soln['t0']
 
