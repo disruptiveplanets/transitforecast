@@ -285,7 +285,7 @@ def plot_map_soln(lc, map_soln):
     ax.set_ylabel('Detrended Flux')
     plt.tight_layout()
 
-    return fig, ax
+    return fig, axes
 
 
 def sample_from_model(model, map_soln):
