@@ -310,6 +310,37 @@ def plot_map_soln(lc, map_soln):
 def sample_from_model(
     model, map_soln, tune=500, draws=500, chains=8, cores=8, step=None
 ):
+    """
+    Sample from the transit light curve model.
+
+    Parameters
+    ----------
+    model : `~pymc3.model`
+        A model object.
+
+    map_soln : dict
+        A dictionary with the maximum a posteriori estimates of the variables.
+
+    tune : int
+        The number of iterations to tune.
+
+    draws : int
+        The number of samples to draw.
+
+    chains : int
+        The number of chains to sample.
+
+    cores : int
+        The number of cores chains to run in parallel.
+
+    step : function
+        A step function.
+
+    Returns
+    -------
+    trace : `~pymc3.backends.base.MultiTrace`
+        A ``MultiTrace`` object that contains the samples.
+    """
     if step is None:
         step = xo.get_dense_nuts_step(target_accept=0.95)
 
