@@ -209,6 +209,28 @@ def build_model(
 
 
 def get_priors_from_tic(tic_id):
+    """
+    Get stellar mass and radius priors from the TESS Input Catalog.
+
+    Parameters
+    ----------
+    tic_id : int
+        A TESS Input Catalog ID.
+
+    Returns
+    -------
+    pri_m_star : float
+        Mean of the mass estimate for the star in solar masses.
+
+    pri_m_star_err : float
+        Standard deviation of the mass estimate for the star in solar masses.
+
+    pri_r_star : float
+        Mean of the radius estimate for the star in solar radii.
+
+    pri_r_star_err : float
+        Standard deviation of the radius estimate for the star in solar radii.
+    """
     tic_params = tls.catalog_info(TIC_ID=tic_id)
     ld, M_star, M_star_l, M_star_u, R_star, R_star_l, R_star_u = tic_params
 
