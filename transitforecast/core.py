@@ -283,7 +283,6 @@ def plot_map_soln(lc, map_soln):
         )
     ax.set_xlabel('Phase')
     ax.set_ylabel('Detrended Flux')
-    plt.tight_layout()
 
     return fig, axes
 
@@ -380,7 +379,6 @@ def plot_posterior_model(lc, trace):
     ax.set_xlabel('Phase')
     ax.set_ylabel('Normalized Flux')
 
-    plt.tight_layout()
     return fig, axes
 
 
