@@ -341,10 +341,10 @@ def sample_from_model(
     trace : `~pymc3.backends.base.MultiTrace`
         A ``MultiTrace`` object that contains the samples.
     """
-    if step is None:
-        step = xo.get_dense_nuts_step(target_accept=0.95)
-
     with model:
+        if step is None:
+            step = xo.get_dense_nuts_step(target_accept=0.95)
+
         trace = pm.sample(
             tune=tune,
             draws=draws,
