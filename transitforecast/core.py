@@ -1,7 +1,6 @@
 """`transitforecast` core functionality."""
 import astroplan as ap
 import astropy.table as at
-import matplotlib.pyplot as plt
 import numpy as np
 import exoplanet as xo
 import pymc3 as pm
