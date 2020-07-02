@@ -459,11 +459,6 @@ def plot_posterior_model(lc, trace):
     return fig, axes
 
 
-def chi_squared(obs, exp, err):
-    x2 = np.sum(((obs-exp)/err)**2, axis=-1)
-    return x2
-
-
 def weighted_percentile(data, weights, percentile):
     cumsum = np.cumsum(weights)
     percentiles = 100*(cumsum-0.5*weights)/cumsum[-1]
