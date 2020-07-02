@@ -517,6 +517,22 @@ def transit_probability_metric(tbar, time, lower_bound, upper_bound):
 
 
 def get_pvalues(traces, dof):
+    """
+    Calculate the p values for models in a list of traces.
+
+    Parameters
+    ----------
+    traces : iterable
+        A list of `~pymc3.backends.base.MultiTrace` objects.
+
+    dof : int
+        The degrees of freedom for the model fit.
+
+    Returns
+    -------
+    pvalues : `~numpy.array`
+        An array with the p-values for the set of models.
+    """
     x2s = np.empty((len(traces), len(traces[0].x2)))
     for i, trace in enumerate(traces):
         x2s[i, :] = trace.x2
