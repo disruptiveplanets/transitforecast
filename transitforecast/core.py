@@ -541,7 +541,21 @@ def get_pvalues(traces, dof):
 
 
 def get_weights(pvalues):
-    return pvalues/pvalues.sum()
+    """
+    Calculate the normalized weights, given a set of p-values.
+
+    Parameters
+    ----------
+    pvalues : `~numpy.array`
+        An array of p-values.
+
+    Returns
+    -------
+    weights : `~numpy.array`
+        An array with the corresponding normalized weights.
+    """
+    weights = pvalues/pvalues.sum()
+    return weights
 
 
 def get_tbar(tmforecast, weights):
