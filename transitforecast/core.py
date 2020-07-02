@@ -559,6 +559,22 @@ def get_weights(pvalues):
 
 
 def get_tbar(tmforecast, weights):
+    """
+    Calculate Tbar, the inverse of the weighted-mean transit forecast.
+
+    Parameters
+    ----------
+    tmforecast : `~numpy.array`
+        An array of forecasted transit models.
+
+    weights : `~numpy.array`
+        An array with the corresponding normalized weights.
+
+    Returns
+    -------
+    tbar : `~numpy.array`
+        The inverse of the weighted-mean transit forecast.
+    """
     tbar = -(weights[:, np.newaxis]*tmforecast).sum(axis=0)
     return tbar
 
