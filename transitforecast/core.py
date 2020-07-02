@@ -478,7 +478,6 @@ def weighted_percentile(data, weights, percentile):
     -------
     value : float
         The value corresponding to the percentile.
-
     """
     cumsum = np.cumsum(weights)
     percentiles = 100*(cumsum-0.5*weights)/cumsum[-1]
