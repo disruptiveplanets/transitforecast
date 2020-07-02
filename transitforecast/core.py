@@ -580,6 +580,27 @@ def get_tbar(tmforecast, weights):
 
 
 def summarize_windows(traces, tforecast, tdistance=None):
+    """
+    Summarize all transit windows suggested by the MCMC sampling.
+
+    Parameters
+    ----------
+    traces : iterable
+        A list of `~pymc3.backends.base.MultiTrace` objects.
+
+    tforecast : `~numpy.array`
+        The time array corresponding to the forecasted transit models.
+
+    tdistance : float
+        The time distance bewteen peaks in the same units as `tforecast.`
+        Defaults to 1/2 the median of the posterior distribution of the period
+        in each `~pymc3.backends.base.MultiTrace`.
+
+    Returns
+    -------
+    windows : `~astropy.table.Table`
+        A table of the identified windows.
+    """
     # Define some useful variables
     dt = np.median(np.diff(tforecast))
     tdists = [tdistance]*len(traces)
