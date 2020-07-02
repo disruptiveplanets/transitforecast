@@ -459,7 +459,7 @@ def plot_posterior_model(lc, trace):
     return fig, axes
 
 
-def weighted_percentile(data, weights, percentile):
+def _weighted_percentile(data, weights, percentile):
     """
     Calculate the weighted percentile of a data set.
 
@@ -516,7 +516,7 @@ def transit_probability_metric(tbar, time, lower_bound, upper_bound):
     return tpm
 
 
-def get_pvalues(traces, dof):
+def _get_pvalues(traces, dof):
     """
     Calculate the p values for models in a list of traces.
 
@@ -540,7 +540,7 @@ def get_pvalues(traces, dof):
     return pvalues
 
 
-def get_weights(pvalues):
+def _get_weights(pvalues):
     """
     Calculate the normalized weights, given a set of p-values.
 
@@ -558,7 +558,7 @@ def get_weights(pvalues):
     return weights
 
 
-def get_tbar(tmforecast, weights):
+def _get_tbar(tmforecast, weights):
     """
     Calculate Tbar, the inverse of the weighted-mean transit forecast.
 
@@ -609,13 +609,13 @@ def summarize_windows(traces, tforecast, tdistance=None):
     ndata = traces[0].lc_model.shape[1]
     nparam = 9  # Need a better way to define/find this value
     dof = ndata - nparam
-    pvalues = get_pvalues(traces, dof)
-    weights = get_weights(pvalues)
+    pvalues = _get_pvalues(traces, dof)
+    weights = _get_weights(pvalues)
 
     # Loop through the scenarios, summarizing transit windows
     windows_list = []
     for i, trace in enumerate(traces):
-        tbar = get_tbar(trace.tmforecast, weights[i, :])
+        tbar = _get_tbar(trace.tmforecast, weights[i, :])
 
         # Identify peaks
         post_period = np.median(trace.period)
@@ -637,9 +637,9 @@ def summarize_windows(traces, tforecast, tdistance=None):
             idx = np.abs(tforecast-tpeak) < tdist
             t_win = tforecast[idx]
             tbar_win = tbar[idx]
-            medians[ii] = weighted_percentile(t_win, tbar_win, 50)
-            lowers[ii] = weighted_percentile(t_win, tbar_win, 2.5)
-            uppers[ii] = weighted_percentile(t_win, tbar_win, 97.5)
+            medians[ii] = _weighted_percentile(t_win, tbar_win, 50)
+            lowers[ii] = _weighted_percentile(t_win, tbar_win, 2.5)
+            uppers[ii] = _weighted_percentile(t_win, tbar_win, 97.5)
             tpms[ii] = transit_probability_metric(
                 tbar, tforecast, lowers[ii], uppers[ii]
             )
