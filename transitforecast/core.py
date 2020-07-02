@@ -521,7 +521,7 @@ def summarize_windows(traces, tforecast, tdistance=None):
 
         # Store results in a DataFrame
         windows = at.Table({
-            'scenario': i*np.ones_like(tpeaks).astype('int'),
+            'scenario': (i+1)*np.ones_like(tpeaks).astype('int'),
             'median': Time(medians, format='jd', scale='tdb'),
             'lower': Time(lowers, format='jd', scale='tdb'),
             'upper': Time(uppers, format='jd', scale='tdb'),
