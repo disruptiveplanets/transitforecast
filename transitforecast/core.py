@@ -358,6 +358,26 @@ def sample_from_model(
 
 
 def plot_posterior_model(lc, trace):
+    """
+    Plot the posterior light curve model.
+
+    Parameters
+    ----------
+    lc : `~lightkurve.LightCurve`
+        A light curve object with the data.
+
+    trace : `~pymc3.backends.base.MultiTrace`
+        A ``MultiTrace`` object that contains the samples.
+
+    Returns
+    -------
+    fig : `~matplotlib.figure.Figure`
+        A Figure object.
+
+    axes : `~matplotlib.axes.Axes`
+        An Axes object with plots of the posterior model as functions of time
+        and orbital phase.
+    """
     varnames = [
         'm_star',
         'r_star',
