@@ -503,7 +503,6 @@ def transit_probability_metric(tbar, time, lower_bound, upper_bound):
     upper_bound : float
         The upper bound for calculating the TPM.
 
-
     Returns
     -------
     tpm : float
