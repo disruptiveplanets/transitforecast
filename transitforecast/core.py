@@ -661,7 +661,28 @@ def summarize_windows(traces, tforecast, tdistance=None):
 
 
 def observable_windows(target, site, constraints, windows):
+    """
+    Determine which windows are observable, given constraints.
 
+    Parameters
+    ----------
+    target : `~astroplan.FixedTarget`
+        A target.
+
+    site : `~astroplan.Observer`
+        A site.
+
+    constraints : iterable
+        A list of `~astroplan.Constraint` objects.
+
+    windows : `~astropy.table.Table`
+        A table of the potential windows.
+
+    Returns
+    -------
+    obs_windows : `~astropy.table.Table`
+        A table of the observable windows.
+    """
     # Determine the observable fraction of the window
     fractions = []
     for window in windows:
