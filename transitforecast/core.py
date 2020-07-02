@@ -460,9 +460,30 @@ def plot_posterior_model(lc, trace):
 
 
 def weighted_percentile(data, weights, percentile):
+    """
+    Calculate the weighted percentile of a data set.
+
+    Parameters
+    ----------
+    data : iterable
+        The data (or "x" values).
+
+    weights : iterable
+        The weights (or "y" values).
+
+    percentile : float
+        The percentile to calculate.
+
+    Returns
+    -------
+    value : float
+        The value corresponding to the percentile.
+
+    """
     cumsum = np.cumsum(weights)
     percentiles = 100*(cumsum-0.5*weights)/cumsum[-1]
-    return np.interp(percentile, percentiles, data)
+    value = np.interp(percentile, percentiles, data)
+    return value
 
 
 def transit_probability_metric(tbar, time, lower_bound, upper_bound):
