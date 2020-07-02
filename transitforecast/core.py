@@ -486,11 +486,35 @@ def weighted_percentile(data, weights, percentile):
 
 
 def transit_probability_metric(tbar, time, lower_bound, upper_bound):
+    """
+    Calculate the transit probability metric.
+
+    Parameters
+    ----------
+    tbar : iterable
+        The "weighted mean" transit signal.
+
+    time : iterable
+        The array of time values corresponding to tbar.
+
+    lower_bound : float
+        The lower bound for calculating the TPM.
+
+    upper_bound : float
+        The upper bound for calculating the TPM.
+
+
+    Returns
+    -------
+    tpm : float
+        The transit probability metric.
+    """
     idx = np.logical_and(
         time >= lower_bound,
         time <= upper_bound
     )
-    return np.trapz(tbar[idx], time[idx])/(upper_bound-lower_bound)
+    tpm = np.trapz(tbar[idx], time[idx])/(upper_bound-lower_bound)
+    return tpm
 
 
 def get_pvalues(traces, dof):
