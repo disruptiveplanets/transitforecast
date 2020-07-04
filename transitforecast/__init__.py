@@ -8,7 +8,6 @@ from .forecast import *  # noqa
 from .observing import *  # noqa
 from .plots import *  # noqa
 
-__uri__ = "https://docs.exoplanet.codes"
 __author__ = "Benjamin Rackham"
 __email__ = "brackham@mit.edu"
 __license__ = "MIT"
