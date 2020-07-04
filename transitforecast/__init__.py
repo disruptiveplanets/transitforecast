@@ -5,7 +5,7 @@ exoplanetary transit signals.
 * Code: https://github.com/disruptiveplanets/transitforecast
 """
 from .forecast import *  # noqa
-from .modeling import *  # noqa
+from .observing import *  # noqa
 from .plots import *  # noqa
 
 __uri__ = "https://docs.exoplanet.codes"
