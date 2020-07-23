@@ -4,6 +4,8 @@ import numpy as np
 import pymc3 as pm
 from scipy.stats import median_abs_deviation
 
+__all__ = ['plot_map_soln', 'plot_posterior_model']
+
 
 def plot_map_soln(lc, map_soln):
     """

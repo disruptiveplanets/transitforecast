@@ -7,6 +7,12 @@ from astropy.time import Time
 from scipy.signal import find_peaks
 from scipy.stats import chi2
 
+__all__ = [
+    'transit_probability_metric',
+    'summarize_windows',
+    'observable_windows'
+]
+
 
 def transit_probability_metric(tbar, time, lower_bound, upper_bound):
     """

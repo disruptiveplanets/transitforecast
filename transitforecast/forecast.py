@@ -7,6 +7,8 @@ import transitleastsquares as tls
 from astropy import units
 from scipy.stats import median_abs_deviation
 
+__all__ = ['build_model', 'get_priors_from_tic', 'sample_from_model']
+
 
 def build_model(
     lc, pri_t0, pri_p, pri_rprs,
