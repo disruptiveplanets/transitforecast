@@ -1,8 +1,9 @@
 """
-An open-source package for probabilistic forecasting of candidate
-exoplanetary transit signals.
+Probabilistic forecasting of candidate exoplanetary transit signals.
 
 * Code: https://github.com/disruptiveplanets/transitforecast
+* Docs: https://transitforecast.readthedocs.io
+* License: MIT
 """
 from .forecast import *  # noqa
 from .observing import *  # noqa
