@@ -1,0 +1,20 @@
+name: transitforecast
+
+channels:
+  - defaults
+  - conda-forge
+
+dependencies:
+  - python=3.7
+  - pip
+  - astroplan
+  - astropy
+  - matplotlib
+  - numpy
+  - exoplanet
+  - lightkurve
+  - pymc3
+  - scipy
+  - theano
+  - pip:
+    - transitleastsquares
