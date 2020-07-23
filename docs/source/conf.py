@@ -32,6 +32,14 @@ release = '0.0.dev1'
 extensions = ['nbsphinx', 'numpydoc', 'sphinx_automodapi.automodapi']
 numpydoc_show_class_members = False
 
+autodoc_mock_imports = [
+    'astropy',
+    'numpy',
+    'pymc3',
+    'scipy',
+    'theano',
+]
+
 # Specify the master document
 master_doc = 'index'
 
