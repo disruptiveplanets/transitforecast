@@ -37,6 +37,7 @@ autodoc_mock_imports = [
     'numpy',
     'pymc3',
     'scipy',
+    'transitforecast',
     'theano',
 ]
 
