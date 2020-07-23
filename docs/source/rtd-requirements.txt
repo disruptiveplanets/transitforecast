@@ -1,3 +1,4 @@
+exoplanet
 nbsphinx
 numpydoc
 sphinx-automodapi
