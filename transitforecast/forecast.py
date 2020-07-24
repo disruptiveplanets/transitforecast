@@ -5,9 +5,15 @@ import pymc3 as pm
 import theano.tensor as tt
 import transitleastsquares as tls
 from astropy import units
+from astropy.time import Time
 from scipy.stats import median_abs_deviation
 
-__all__ = ['build_model', 'get_priors_from_tic', 'sample_from_model']
+__all__ = [
+    'build_model',
+    'get_forecast_window',
+    'get_priors_from_tic',
+    'sample_from_model'
+]
 
 
 def build_model(
@@ -202,6 +208,46 @@ def build_model(
         map_soln = xo.optimize(start=map_soln)
 
     return model, map_soln
+
+
+def get_forecast_window(size=30*units.day, cadence=2*units.min, start=None):
+    """
+    Get an array of times in JD to forecast transits.
+
+    Defaults to an array covering the next 30 days at 2-min cadence.
+
+    Parameters
+    ----------
+    size : float or `~astropy.units.Quantity`
+        Size of the forecast window. Defaults to days if unit not specified.
+
+    cadence : float or `~astropy.units.Quantity`
+        Cadence of the times in the forecast window. Defaults to 2-min if
+        unit not specfied.
+
+    start : `~astropy.time.Time`
+        Start of the forecast window. `None` defaults to now.
+
+    Returns
+    -------
+    tforecast : `~numpy.ndarray`
+        Array of times in JD.
+    """
+    if type(size) is units.Quantity:
+        size = size.to(units.day)
+    else:
+        size = size*units.day
+    if type(cadence) is units.Quantity:
+        cadence = cadence.to(units.day)
+    else:
+        cadence = cadence*units.day
+    if start is None:
+        start = Time.now()
+
+    forecast_times = start + np.arange(0, size.value, cadence.value)
+    tforecast = forecast_times.jd
+
+    return tforecast
 
 
 def get_priors_from_tic(tic_id):
