@@ -17,9 +17,7 @@ __all__ = [
 
 
 def build_model(
-    lc, pri_t0, pri_p, pri_rprs,
-    pri_m_star, pri_m_star_err, pri_r_star, pri_r_star_err,
-    tforecast
+    lc, pri_t0, pri_p, pri_rprs, pri_m_star, pri_r_star, tforecast
 ):
     """
     Build the transit light curve model.
@@ -38,17 +36,13 @@ def build_model(
     pri_rprs : float
         Initial guess for planet-to-star radius ratio.
 
-    pri_m_star : float
-        Mean of the mass estimate for the star in solar masses.
+    pri_m_star : tuple of floats
+        Mean and standard deviation of the stellar mass estimate
+        in solar masses.
 
-    pri_m_star_err : float
-        Standard deviation of the mass estimate for the star in solar masses.
-
-    pri_r_star : float
-        Mean of the radius estimate for the star in solar radii.
-
-    pri_r_star_err : float
-        Standard deviation of the radius estimate for the star in solar radii.
+    pri_r_star : tuple of floats
+        Mean and standard deviation of the stellar radius estimate
+        in solar radii.
 
     tforecast : iterable
         The times for the forecast. Assumes same units as ``lc.time``.
@@ -66,15 +60,15 @@ def build_model(
         # Stellar mass
         m_star = pm.Normal(
             'm_star',
-            mu=pri_m_star,
-            sd=pri_m_star_err
+            mu=pri_m_star[0],
+            sd=pri_m_star[1]
         )
 
         # Stellar radius
         r_star = pm.Normal(
             'r_star',
-            mu=pri_r_star,
-            sd=pri_r_star_err
+            mu=pri_r_star[0],
+            sd=pri_r_star[1]
         )
 
         # Quadratic limb-darkening parameters
@@ -261,17 +255,13 @@ def get_priors_from_tic(tic_id):
 
     Returns
     -------
-    pri_m_star : float
-        Mean of the mass estimate for the star in solar masses.
+    pri_m_star : tuple of floats
+        Mean and standard deviation of the stellar mass estimate
+        in solar masses.
 
-    pri_m_star_err : float
-        Standard deviation of the mass estimate for the star in solar masses.
-
-    pri_r_star : float
-        Mean of the radius estimate for the star in solar radii.
-
-    pri_r_star_err : float
-        Standard deviation of the radius estimate for the star in solar radii.
+    pri_r_star : tuple of floats
+        Mean and standard deviation of the stellar radius estimate
+        in solar radii.
     """
     tic_params = tls.catalog_info(TIC_ID=tic_id)
     ld, M_star, M_star_l, M_star_u, R_star, R_star_l, R_star_u = tic_params
@@ -291,12 +281,15 @@ def get_priors_from_tic(tic_id):
         R_star_l = 0.1
 
     # Use stellar parameters from TIC
-    pri_m_star = M_star
+    pri_m_star_mean = M_star
     pri_m_star_err = (M_star_u+M_star_l)/2.
-    pri_r_star = R_star
-    pri_r_star_err = (R_star_u+R_star_l)/2.
+    pri_m_star = (pri_m_star_mean, pri_m_star_err)
 
-    return pri_m_star, pri_m_star_err, pri_r_star, pri_r_star_err
+    pri_r_star_mean = R_star
+    pri_r_star_err = (R_star_u+R_star_l)/2.
+    pri_r_star = (pri_r_star_mean, pri_r_star_err)
+
+    return pri_m_star, pri_r_star
 
 
 def sample_from_model(
