@@ -4,6 +4,7 @@ import exoplanet as xo
 import pymc3 as pm
 import theano.tensor as tt
 import transitleastsquares as tls
+import warnings
 from astropy import units
 from astropy.time import Time
 from scipy.stats import median_abs_deviation
@@ -199,21 +200,24 @@ def build_model(
         pm.Normal('obs', mu=lc_model, sd=lc.flux_err, observed=lc.flux)
 
         # Fit for the maximum a posteriori parameters
-        map_soln = xo.optimize(
-            start=model.test_point, verbose=verbose
-        )
-        map_soln = xo.optimize(
-            start=map_soln, vars=[f0, period, t0, r], verbose=verbose
-        )
-        map_soln = xo.optimize(
-            start=map_soln, vars=rho_star, verbose=verbose
-        )
-        map_soln = xo.optimize(
-            start=map_soln, vars=t14, verbose=verbose
-        )
-        map_soln = xo.optimize(
-            start=map_soln, verbose=verbose
-        )
+        with warnings.catch_warnings():
+            if not verbose:
+                warnings.simplefilter('ignore', FutureWarning)
+            map_soln = xo.optimize(
+                start=model.test_point, verbose=verbose
+            )
+            map_soln = xo.optimize(
+                start=map_soln, vars=[f0, period, t0, r], verbose=verbose
+            )
+            map_soln = xo.optimize(
+                start=map_soln, vars=rho_star, verbose=verbose
+            )
+            map_soln = xo.optimize(
+                start=map_soln, vars=t14, verbose=verbose
+            )
+            map_soln = xo.optimize(
+                start=map_soln, verbose=verbose
+            )
 
     return model, map_soln
 
