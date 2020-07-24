@@ -243,7 +243,7 @@ def _get_weights(pvalues):
     weights : `~numpy.array`
         An array with the corresponding normalized weights.
     """
-    weights = pvalues/pvalues.sum()
+    weights = (1-pvalues)/(1-pvalues).sum()
     return weights
 
 
