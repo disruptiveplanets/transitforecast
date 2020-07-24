@@ -36,11 +36,11 @@ def build_model(
     pri_rprs : float
         Initial guess for planet-to-star radius ratio.
 
-    pri_m_star : tuple of floats
+    pri_m_star : ndarray
         Mean and standard deviation of the stellar mass estimate
         in solar masses.
 
-    pri_r_star : tuple of floats
+    pri_r_star : ndarray
         Mean and standard deviation of the stellar radius estimate
         in solar radii.
 
@@ -255,11 +255,11 @@ def get_priors_from_tic(tic_id):
 
     Returns
     -------
-    pri_m_star : tuple of floats
+    pri_m_star : ndarray
         Mean and standard deviation of the stellar mass estimate
         in solar masses.
 
-    pri_r_star : tuple of floats
+    pri_r_star : ndarray
         Mean and standard deviation of the stellar radius estimate
         in solar radii.
     """
@@ -283,11 +283,11 @@ def get_priors_from_tic(tic_id):
     # Use stellar parameters from TIC
     pri_m_star_mean = M_star
     pri_m_star_err = (M_star_u+M_star_l)/2.
-    pri_m_star = (pri_m_star_mean, pri_m_star_err)
+    pri_m_star = np.append(pri_m_star_mean, pri_m_star_err)
 
     pri_r_star_mean = R_star
     pri_r_star_err = (R_star_u+R_star_l)/2.
-    pri_r_star = (pri_r_star_mean, pri_r_star_err)
+    pri_r_star = np.append(pri_r_star_mean, pri_r_star_err)
 
     return pri_m_star, pri_r_star
 
