@@ -17,7 +17,8 @@ __all__ = [
 
 
 def build_model(
-    lc, pri_t0, pri_p, pri_rprs, pri_m_star, pri_r_star, tforecast
+    lc, pri_t0, pri_p, pri_rprs, pri_m_star, pri_r_star, tforecast,
+    verbose=False
 ):
     """
     Build the transit light curve model.
@@ -46,6 +47,9 @@ def build_model(
 
     tforecast : iterable
         The times for the forecast. Assumes same units as ``lc.time``.
+
+    verbose : bool
+        Print details of optimization.
 
     Returns
     -------
@@ -195,11 +199,21 @@ def build_model(
         pm.Normal('obs', mu=lc_model, sd=lc.flux_err, observed=lc.flux)
 
         # Fit for the maximum a posteriori parameters
-        map_soln = xo.optimize(start=model.test_point)
-        map_soln = xo.optimize(start=map_soln, vars=[f0, period, t0, r])
-        map_soln = xo.optimize(start=map_soln, vars=rho_star)
-        map_soln = xo.optimize(start=map_soln, vars=t14)
-        map_soln = xo.optimize(start=map_soln)
+        map_soln = xo.optimize(
+            start=model.test_point, verbose=verbose
+        )
+        map_soln = xo.optimize(
+            start=map_soln, vars=[f0, period, t0, r], verbose=verbose
+        )
+        map_soln = xo.optimize(
+            start=map_soln, vars=rho_star, verbose=verbose
+        )
+        map_soln = xo.optimize(
+            start=map_soln, vars=t14, verbose=verbose
+        )
+        map_soln = xo.optimize(
+            start=map_soln, verbose=verbose
+        )
 
     return model, map_soln
 
