@@ -9,6 +9,7 @@ from scipy.stats import chi2
 
 __all__ = [
     'transit_forecast',
+    'transit_observability_metric',
     'transit_probability_metric',
     'summarize_windows',
     'observable_windows'
@@ -44,6 +45,36 @@ def transit_forecast(traces):
     tbars = np.array(tbars)
 
     return tbars
+
+
+def transit_observability_metric(tbars, time, dt):
+    """
+    Calculate the transit observability metric.
+
+    Parameters
+    ----------
+    tbars : iterable
+        The weighted transit signals.
+
+    time : iterable
+        The array of time values corresponding to tbar.
+
+    dt : float
+        The width of the time window in the same units as `time`.
+
+    Returns
+    -------
+    Ms : ndarray
+        The transit observability metrics for the transit signals.
+    """
+    npoints = int(dt/np.median(np.diff(time)))
+    Ms = []
+    for tbar in tbars:
+        M = _moving_average(-tbar, npoints)
+        Ms.append(M)
+    Ms = np.array(Ms)
+
+    return Ms
 
 
 def transit_probability_metric(tbar, time, lower_bound, upper_bound):
@@ -298,6 +329,28 @@ def _get_tbar(tmforecast, weights):
     """
     tbar = -(weights[:, np.newaxis]*tmforecast).sum(axis=0)
     return tbar
+
+
+def _moving_average(x, window):
+    """
+    Calculate the moving average within a window.
+
+    Parameters
+    ----------
+    x : array_like
+        The data (or "x" values).
+
+    window : int
+        The width of the window.
+
+    Returns
+    -------
+    ma : `~numpy.array`
+        The moving average of the data.
+    """
+    ma = np.convolve(x, np.ones(window), 'same') / window
+
+    return ma
 
 
 def _weighted_percentile(data, weights, percentile):
