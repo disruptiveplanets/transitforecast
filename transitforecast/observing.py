@@ -8,10 +8,41 @@ from scipy.signal import find_peaks
 from scipy.stats import chi2
 
 __all__ = [
+    'transit_forecast',
     'transit_probability_metric',
     'summarize_windows',
     'observable_windows'
 ]
+
+
+def transit_forecast(traces):
+    """
+    Calculate the weighted transit forecast.
+
+    Parameters
+    ----------
+    traces : iterable
+        A list of `~pymc3.backends.base.MultiTrace` objects.
+
+    Returns
+    -------
+    tbars : iterable
+        A list of the weighted transit forecasts for scenarios.
+    """
+    # Define weights for the scenarios
+    ndata = traces[0].lc_model.shape[1]
+    nparam = 9  # Need a better way to define/find this value
+    dof = ndata - nparam
+    pvalues = _get_pvalues(traces, dof)
+    weights = _get_weights(pvalues)
+
+    # Caculate the weighted transit forecasts
+    tbars = []
+    for i, trace in enumerate(traces):
+        tbar = (trace.tmforecast*weights[i, np.newaxis].T).sum(axis=0)
+        tbars.append(tbar)
+
+    return tbars
 
 
 def transit_probability_metric(tbar, time, lower_bound, upper_bound):
