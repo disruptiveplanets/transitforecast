@@ -90,22 +90,22 @@ def transit_probability_metric(tbar, time, lower_bound, upper_bound):
         The array of time values corresponding to tbar.
 
     lower_bound : float
-        The lower bound for calculating the TPM.
+        The lower bound for calculating the M.
 
     upper_bound : float
-        The upper bound for calculating the TPM.
+        The upper bound for calculating the M.
 
     Returns
     -------
-    tpm : float
+    M : float
         The transit probability metric.
     """
     idx = np.logical_and(
         time >= lower_bound,
         time <= upper_bound
     )
-    tpm = np.trapz(tbar[idx], time[idx])/(upper_bound-lower_bound)
-    return tpm
+    M = np.trapz(tbar[idx], time[idx])/(upper_bound-lower_bound)
+    return M
 
 
 def summarize_windows(traces, tforecast, tdistance=None):
@@ -157,11 +157,11 @@ def summarize_windows(traces, tforecast, tdistance=None):
         tpeaks = tforecast[idx_peaks]
 
         # Identify the median and lower and upper bound of the distribution
-        # surrounding each peak and it's corresponding TPM
+        # surrounding each peak and it's corresponding M
         medians = np.empty(tpeaks.size)
         lowers = np.empty(tpeaks.size)
         uppers = np.empty(tpeaks.size)
-        tpms = np.empty(tpeaks.size)
+        Ms = np.empty(tpeaks.size)
         for ii, tpeak in enumerate(tpeaks):
             idx = np.abs(tforecast-tpeak) < tdist
             t_win = tforecast[idx]
@@ -169,7 +169,7 @@ def summarize_windows(traces, tforecast, tdistance=None):
             medians[ii] = _weighted_percentile(t_win, tbar_win, 50)
             lowers[ii] = _weighted_percentile(t_win, tbar_win, 2.5)
             uppers[ii] = _weighted_percentile(t_win, tbar_win, 97.5)
-            tpms[ii] = transit_probability_metric(
+            Ms[ii] = transit_probability_metric(
                 tbar, tforecast, lowers[ii], uppers[ii]
             )
 
@@ -179,7 +179,7 @@ def summarize_windows(traces, tforecast, tdistance=None):
             'median': Time(medians, format='jd', scale='tdb'),
             'lower': Time(lowers, format='jd', scale='tdb'),
             'upper': Time(uppers, format='jd', scale='tdb'),
-            'tpm': tpms
+            'M': Ms
         })
         windows_list.append(windows)
 
@@ -259,7 +259,7 @@ def observable_windows(target, site, constraints, windows):
     # Drop some columns and sort the rest
     obs_windows.remove_columns(['lower', 'upper'])
     cols = [
-        'scenario', 'tpm', 'fraction',
+        'scenario', 'M', 'fraction',
         'start', 'median', 'end',
         'zstart', 'zmedian', 'zend'
     ]
