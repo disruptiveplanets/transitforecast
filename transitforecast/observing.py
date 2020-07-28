@@ -26,8 +26,8 @@ def transit_forecast(traces):
 
     Returns
     -------
-    tbars : iterable
-        A list of the weighted transit forecasts for scenarios.
+    tbars : ndarray
+        The weighted transit forecasts for the scenarios.
     """
     # Define weights for the scenarios
     ndata = traces[0].lc_model.shape[1]
@@ -41,6 +41,7 @@ def transit_forecast(traces):
     for i, trace in enumerate(traces):
         tbar = (trace.tmforecast*weights[i, np.newaxis].T).sum(axis=0)
         tbars.append(tbar)
+    tbars = np.array(tbars)
 
     return tbars
 
