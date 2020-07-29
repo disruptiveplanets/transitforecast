@@ -9,6 +9,7 @@ from scipy.stats import chi2
 
 __all__ = [
     'transit_forecast',
+    'relative_weights',
     'transit_observability_metric',
     'transit_probability_metric',
     'summarize_windows',
@@ -33,6 +34,45 @@ def transit_forecast(trace):
     forecast = trace.tmforecast.mean(axis=0)
 
     return forecast
+
+
+def relative_weights(lc, traces):
+    """
+    Calculate the relative weights for the scenarios.
+
+    Parameters
+    ----------
+    lc : `~lightkurve.LightCurve`
+        A light curve object with the data.
+
+    traces : iterable
+        A list of `~pymc3.backends.base.MultiTrace` objects.
+
+    Returns
+    -------
+    weights : ndarray
+        The relative weights for the scenarios.
+    """
+    # Calculate the median light curve model
+    med_lc_models = [
+        np.median(trace.lc_model, axis=0) for trace in traces
+    ]
+
+    # Calculate x2
+    x2s = [
+        np.sum(((lc.flux-model)/lc.flux_err)**2) for model in med_lc_models
+    ]
+
+    # Calculate the p-value
+    ndata = traces[0].lc_model.shape[1]
+    nparam = 9  # Need a better way to define/find this value
+    dof = ndata - nparam
+    pvalues = chi2.sf(x2s, dof)
+
+    # Calculate relative weighted_transit_forecast
+    weights = pvalues/pvalues.sum()  # Should this be pvalues.max() instead?
+
+    return weights
 
 
 def weighted_transit_forecast(traces):
