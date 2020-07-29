@@ -167,7 +167,64 @@ def transit_probability_metric(tbar, time, lower_bound, upper_bound):
     return M
 
 
-def summarize_windows(traces, tforecast, tdistance=None):
+def summarize_windows(trace, tforecast, tdistance=None):
+    """
+    Summarize all transit windows suggested by the MCMC sampling.
+
+    Parameters
+    ----------
+    traces : iterable
+        A list of `~pymc3.backends.base.MultiTrace` objects.
+
+    tforecast : `~numpy.array`
+        The time array corresponding to the forecasted transit models.
+
+    tdistance : float
+        The time distance bewteen peaks in the same units as `tforecast.`
+        Defaults to 1/2 the median of the posterior distribution of the period
+        in each `~pymc3.backends.base.MultiTrace`.
+
+    Returns
+    -------
+    windows : `~astropy.table.Table`
+        A table of the identified windows.
+    """
+    # Define some useful variables
+    dt = np.median(np.diff(tforecast))
+
+    # Identify peaks
+    forecast = transit_forecast(trace)
+    post_period = np.median(trace.period)
+    if tdistance is None:
+        # Treat peaks within P as a single peak
+        tdist = post_period
+    distance = int((tdist)/dt)
+    idx_peaks, _ = find_peaks(-forecast, distance=distance)
+    tpeaks = tforecast[idx_peaks]
+
+    # Summarize transit windows
+    medians = np.empty(tpeaks.size)
+    lowers = np.empty(tpeaks.size)
+    uppers = np.empty(tpeaks.size)
+    for i, tpeak in enumerate(tpeaks):
+        idx = np.abs(tforecast-tpeak) < 0.5*tdist
+        t_win = tforecast[idx]
+        f_win = forecast[idx]
+        medians[i] = _weighted_percentile(t_win, f_win, 50.)
+        lowers[i] = t_win[np.nonzero(f_win)[0].min()]
+        uppers[i] = t_win[np.nonzero(f_win)[0].max()]
+
+    # Store results in a astropy.table.Table
+    windows = at.Table({
+        'median': Time(medians, format='jd', scale='tdb'),
+        'lower': Time(lowers, format='jd', scale='tdb'),
+        'upper': Time(uppers, format='jd', scale='tdb')
+    })
+
+    return windows
+
+
+def summarize_windows_v0(traces, tforecast, tdistance=None):
     """
     Summarize all transit windows suggested by the MCMC sampling.
 
