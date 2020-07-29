@@ -16,7 +16,26 @@ __all__ = [
 ]
 
 
-def transit_forecast(traces):
+def transit_forecast(trace):
+    """
+    Calculate the mean transit forecast.
+
+    Parameters
+    ----------
+    trace : `~pymc3.backends.base.MultiTrace`
+        The MCMC trace object.
+
+    Returns
+    -------
+    forecast : ndarray
+        The mean transit forecast for the scenario.
+    """
+    forecast = trace.tmforecast.mean(axis=0)
+
+    return forecast
+
+
+def weighted_transit_forecast(traces):
     """
     Calculate the weighted transit forecast.
 
