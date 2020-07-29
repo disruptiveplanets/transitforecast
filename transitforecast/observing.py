@@ -1,6 +1,6 @@
 """Observing forecasted events."""
 import astroplan as ap
-import astropy.table as at
+import astropy.table as astrotab
 import numpy as np
 from astropy import units
 from astropy.time import Time
@@ -215,7 +215,7 @@ def summarize_windows(trace, tforecast, tdistance=None):
         uppers[i] = t_win[np.nonzero(f_win)[0].max()]
 
     # Store results in a astropy.table.Table
-    windows = at.Table({
+    windows = astrotab.Table({
         'median': Time(medians, format='jd', scale='tdb'),
         'lower': Time(lowers, format='jd', scale='tdb'),
         'upper': Time(uppers, format='jd', scale='tdb')
@@ -290,7 +290,7 @@ def summarize_windows_v0(traces, tforecast, tdistance=None):
             )
 
         # Store results in a DataFrame
-        windows = at.Table({
+        windows = astrotab.Table({
             'scenario': (i+1)*np.ones_like(tpeaks).astype('int'),
             'median': Time(medians, format='jd', scale='tdb'),
             'lower': Time(lowers, format='jd', scale='tdb'),
@@ -300,7 +300,7 @@ def summarize_windows_v0(traces, tforecast, tdistance=None):
         windows_list.append(windows)
 
     # Concatenate all results into a single DataFrame
-    windows = at.vstack(windows_list)
+    windows = astrotab.vstack(windows_list)
 
     return windows
 
