@@ -305,80 +305,99 @@ def summarize_windows_v0(traces, tforecast, tdistance=None):
     return windows
 
 
-def observable_windows(target, site, constraints, windows):
+def observable_windows(
+    windows, tforecast, forecast, target, site, constraints, weight=1.
+):
     """
     Determine which windows are observable, given constraints.
 
     Parameters
     ----------
+    windows : `~astropy.table.Table`
+        A table of the forecasted windows.
+
+    tforecast : `~numpy.array`
+        The time array for the forecasted transit models.
+
+    forecast : `~numpy.array`
+        The transit forecast.
+
     target : `~astroplan.FixedTarget`
-        A target.
+        A target object.
 
     site : `~astroplan.Observer`
-        A site.
+        A site object.
 
     constraints : iterable
         A list of `~astroplan.Constraint` objects.
 
-    windows : `~astropy.table.Table`
-        A table of the potential windows.
+    weight : float, optional
+        Relative weight of the scenario. Defaults to 1 if not specified.
 
     Returns
     -------
     obs_windows : `~astropy.table.Table`
         A table of the observable windows.
     """
-    # Determine the observable fraction of the window
-    fractions = []
-    for window in windows:
-        time_range = [window['lower'], window['upper']]
-        obs_table = ap.observability_table(
-            constraints,
-            site,
-            [target],
-            time_range=time_range,
-            time_grid_resolution=10*units.min
+    # Iterate through windows, determining observable fractions, start and end
+    # times, the duration of the observation, and the observational efficiency
+    # metric.
+    fracs = np.empty(len(windows))
+    t1s = np.empty(len(windows))
+    t2s = np.empty(len(windows))
+    dts = np.empty(len(windows))
+    Ms = np.empty(len(windows))
+    for i, window in enumerate(windows):
+        idx = np.logical_and(
+            tforecast >= window['lower'].jd,
+            tforecast <= window['upper'].jd
         )
-        fractions.append(obs_table['fraction of time observable'][0])
-    windows['fraction'] = fractions
-    obs_windows = windows[windows['fraction'] > 0]
-
-    # Determine start and end times of observations and
-    # refine the observable fraction
-    starts = []
-    ends = []
-    refined_fractions = []
-    for window in obs_windows:
-        time_range = [window['lower'], window['upper']]
-        time_grid = ap.time_grid_from_range(
-            time_range, time_resolution=1*units.min
-        )
-        observable = ap.is_event_observable(
+        t_win = tforecast[idx]
+        f_win = forecast[idx]
+        obs = ap.is_event_observable(
             constraints,
             site,
             target,
-            time_grid
-        )[0]
-        starts.append(time_grid[observable].min())
-        ends.append(time_grid[observable].max())
-        refined_fractions.append(observable.sum()/len(observable))
+            Time(t_win, format='jd')
+        ).flatten()
 
-    obs_windows['fraction'] = refined_fractions
-    obs_windows['start'] = starts
-    obs_windows['end'] = ends
+        # Target is unobservable during window
+        if not obs.sum():
+            frac = 0.
+            t1 = np.nan
+            t2 = np.nan
+            dt = np.nan
+            M = np.nan
+        # Target is observable during window
+        else:
+            frac = np.trapz(f_win[obs], t_win[obs])/np.trapz(f_win, t_win)
+            t1 = t_win[obs][0]
+            t2 = t_win[obs][-1]
+            dt = t_win[obs].ptp()
+            M = weight*frac/dt
+        fracs[i] = frac
+        t1s[i] = t1
+        t2s[i] = t2
+        dts[i] = dt
+        Ms[i] = M
+    windows['fraction'] = fracs
+    windows['t1'] = t1s
+    windows['t2'] = t2s
+    windows['dt'] = dts
+    windows['M'] = Ms
 
-    # Calculate the airmass of the target at important times
-    obs_windows['zstart'] = site.altaz(obs_windows['start'], target).secz
-    obs_windows['zmedian'] = site.altaz(obs_windows['median'], target).secz
-    obs_windows['zend'] = site.altaz(obs_windows['end'], target).secz
+    # Select only observable windows
+    obs_windows = windows[windows['fraction'] > 0]
 
-    # Drop some columns and sort the rest
-    obs_windows.remove_columns(['lower', 'upper'])
-    cols = [
-        'scenario', 'M', 'fraction',
-        'start', 'median', 'end',
-        'zstart', 'zmedian', 'zend'
-    ]
+    # Convert some times to `astropy.time.Time` objects
+    obs_windows['t1'] = Time(obs_windows['t1'], format='jd')
+    obs_windows['t2'] = Time(obs_windows['t2'], format='jd')
+
+    # Add units for dt
+    obs_windows['dt'] = obs_windows['dt']*units.d
+
+    # Reorder the columns
+    cols = ['median', 'lower', 'upper', 't1', 't2', 'dt', 'fraction', 'M']
     obs_windows = obs_windows[cols]
 
     return obs_windows
