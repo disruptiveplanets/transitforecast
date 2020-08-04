@@ -60,6 +60,14 @@ def build_model(
     map_soln : dict
         A dictionary with the maximum a posteriori estimates of the variables.
     """
+    # Ensure right data type for theano
+    dtype =  np.dtype('float64')
+    dts = [arr.dtype for arr in [lc.time, lc.flux, lc.flux_err]]
+    if not all(dt is dtype for dt in dts):
+        lc.time = np.array(lc.time, dtype=dtype)
+        lc.flux = np.array(lc.flux, dtype=dtype)
+        lc.flux_err = np.array(lc.flux_err, dtype=dtype)
+
     # Define the model for the light curve
     with pm.Model() as model:
         # Stellar mass
