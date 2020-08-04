@@ -319,7 +319,7 @@ def get_priors_from_tic(tic_id):
 
 
 def sample_from_model(
-    model, map_soln, tune=500, draws=500, chains=8, cores=8, step=None
+    model, map_soln, tune=500, draws=200, chains=5, cores=5, step=None
 ):
     """
     Sample from the transit light curve model.
