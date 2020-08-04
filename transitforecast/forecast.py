@@ -1,6 +1,7 @@
 """Forecasting transit events."""
-import numpy as np
 import exoplanet as xo
+import multiprocessing
+import numpy as np
 import pymc3 as pm
 import theano.tensor as tt
 import transitleastsquares as tls
@@ -319,7 +320,7 @@ def get_priors_from_tic(tic_id):
 
 
 def sample_from_model(
-    model, map_soln, tune=500, draws=200, chains=5, cores=5, step=None
+    model, map_soln, tune=500, draws=200, chains=5, cores=None, step=None
 ):
     """
     Sample from the transit light curve model.
@@ -342,7 +343,7 @@ def sample_from_model(
         The number of chains to sample.
 
     cores : int, optional
-        The number of cores chains to run in parallel.
+        The number of cores to run in parallel.
 
     step : function, optional
         A step function.
@@ -352,6 +353,10 @@ def sample_from_model(
     trace : `~pymc3.backends.base.MultiTrace`
         A ``MultiTrace`` object that contains the samples.
     """
+    # Use all CPU threads, unless specified otherwise
+    if cores is None:
+        cores = multiprocessing.cpu_count()
+
     with model:
         if step is None:
             step = xo.get_dense_nuts_step(target_accept=0.95)
