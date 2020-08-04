@@ -332,19 +332,19 @@ def sample_from_model(
     map_soln : dict
         A dictionary with the maximum a posteriori estimates of the variables.
 
-    tune : int
+    tune : int, optional
         The number of iterations to tune.
 
-    draws : int
+    draws : int, optional
         The number of samples to draw.
 
-    chains : int
+    chains : int, optional
         The number of chains to sample.
 
-    cores : int
+    cores : int, optional
         The number of cores chains to run in parallel.
 
-    step : function
+    step : function, optional
         A step function.
 
     Returns
