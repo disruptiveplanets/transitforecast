@@ -61,7 +61,7 @@ def build_model(
         A dictionary with the maximum a posteriori estimates of the variables.
     """
     # Ensure right data type for theano
-    dtype =  np.dtype('float64')
+    dtype = np.dtype('float64')
     dts = [arr.dtype for arr in [lc.time, lc.flux, lc.flux_err]]
     if not all(dt is dtype for dt in dts):
         lc.time = np.array(lc.time, dtype=dtype)
