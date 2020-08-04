@@ -357,6 +357,9 @@ def sample_from_model(
     if cores is None:
         cores = multiprocessing.cpu_count()
 
+    # Ignore FutureWarnings
+    warnings.simplefilter('ignore', FutureWarning)
+
     with model:
         if step is None:
             step = xo.get_dense_nuts_step(target_accept=0.95)
@@ -369,5 +372,8 @@ def sample_from_model(
             cores=cores,
             step=step
         )
+
+    # Reset warnings
+    warnings.resetwarnings()
 
     return trace
