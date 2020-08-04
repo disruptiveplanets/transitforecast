@@ -29,7 +29,7 @@ def transit_forecast(trace):
     forecast : ndarray
         The mean transit forecast for the scenario.
     """
-    forecast = trace.tmforecast.mean(axis=0)
+    forecast = trace.forecast.mean(axis=0)
 
     return forecast
 
