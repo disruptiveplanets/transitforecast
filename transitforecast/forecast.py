@@ -353,9 +353,9 @@ def sample_from_model(
     trace : `~pymc3.backends.base.MultiTrace`
         A ``MultiTrace`` object that contains the samples.
     """
-    # Use all CPU threads, unless specified otherwise
+    # Use 1 CPU thread per chain, unless specified otherwise
     if cores is None:
-        cores = multiprocessing.cpu_count()
+        cores = min(chains, multiprocessing.cpu_count())
 
     # Ignore FutureWarnings
     warnings.simplefilter('ignore', FutureWarning)
