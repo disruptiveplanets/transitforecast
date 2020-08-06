@@ -50,7 +50,7 @@ def build_model(
     tforecast : iterable
         The times for the forecast. Assumes same units as ``lc.time``.
 
-    verbose : bool
+    verbose : bool, optional
         Print details of optimization.
 
     Returns
@@ -239,14 +239,14 @@ def get_forecast_window(size=30*units.day, cadence=2*units.min, start=None):
 
     Parameters
     ----------
-    size : float or `~astropy.units.Quantity`
+    size : float or `~astropy.units.Quantity`, optional
         Size of the forecast window. Defaults to days if unit not specified.
 
-    cadence : float or `~astropy.units.Quantity`
+    cadence : float or `~astropy.units.Quantity`, optional
         Cadence of the times in the forecast window. Defaults to 2-min if
         unit not specfied.
 
-    start : `~astropy.time.Time`
+    start : `~astropy.time.Time`, optional
         Start of the forecast window. `None` defaults to now.
 
     Returns

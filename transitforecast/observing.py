@@ -85,7 +85,7 @@ def summarize_windows(trace, tforecast, tdistance=None):
     tforecast : `~numpy.array`
         The time array corresponding to the forecasted transit models.
 
-    tdistance : float
+    tdistance : float, optional
         The time distance bewteen peaks in the same units as `tforecast.`
         Defaults to 1/2 the median of the posterior distribution of the period
         in each `~pymc3.backends.base.MultiTrace`.
