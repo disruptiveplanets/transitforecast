@@ -21,3 +21,4 @@ dependencies:
   - sphinx-automodapi
   - pip:
     - transitleastsquares
+    - wotan
