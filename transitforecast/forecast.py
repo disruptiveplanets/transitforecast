@@ -6,12 +6,14 @@ import pymc3 as pm
 import theano.tensor as tt
 import transitleastsquares as tls
 import warnings
+import wotan
 from astropy import units
 from astropy.time import Time
 from scipy.stats import median_abs_deviation
 
 __all__ = [
     'build_model',
+    'flatten',
     'get_forecast_window',
     'get_priors_from_tic',
     'sample_from_model'
@@ -229,6 +231,75 @@ def build_model(
             )
 
     return model, map_soln
+
+
+def flatten(
+    lc, t0=None, period=None, duration=1./24., window_length=3./24., **kwargs
+):
+    """
+    Flatten a light curve using the `wotan` package.
+
+    Parameters
+    ----------
+    lc : `~lightkurve.LightCurve`
+        A light curve object with the data.
+
+    t0 : float, optional
+        Mid-transit time of transit signal to mask.
+
+    period : float, optional
+        Period of transit signal to mask.
+
+    duration : float, optional
+        Duration of transit signal to mask. Defaults to 1 hr.
+
+    window_length : float, optional
+        Length of the filter window for `wotan.flatten()`. Defaults to 3 hr.
+
+    kwargs : dict, optional
+        Any extra keyword arguments to pass to `wotan.flatten()`.
+
+    Returns
+    -------
+    lc : `~lightkurve.LightCurve`
+        A light curve object with the flattened light curve.
+
+    trend : ndarray
+        The removed flux trend. Only returned if ``return_trend`` is `True`.
+    """
+    # Mask transits if an ephemeris is given
+    if t0 is not None:
+        mask = wotan.transit_mask(
+            time=lc.time,
+            T0=t0,
+            period=period,
+            duration=duration
+        )
+    else:
+        mask = np.zeros_like(lc.time, dtype=bool)
+
+    # Flatten the light curve
+    flux_flat = wotan.flatten(
+        lc.time,
+        lc.flux,
+        window_length=window_length,
+        mask=mask,
+        **kwargs
+    )
+
+    # Return trend if return_trend=True
+    return_trend = False
+    if isinstance(flux_flat, tuple):
+        return_trend = True
+        flux_flat, trend = flux_flat
+
+    lcflat = lc.copy()
+    lcflat.flux = flux_flat
+
+    if return_trend:
+        return (lcflat, trend)
+    else:
+        return lcflat
 
 
 def get_forecast_window(size=30*units.day, cadence=2*units.min, start=None):
