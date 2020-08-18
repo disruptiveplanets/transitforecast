@@ -15,6 +15,24 @@ __all__ = [
 ]
 
 
+def _lnlikelihood(obs, model, err):
+    n = len(obs)
+    lnlike = (
+        - n/2 * np.log(2*np.pi)
+        - np.sum(np.log(err))
+        - np.sum((obs-model)**2 / (2*err**2))
+    )
+
+    return lnlike
+
+
+def _bayesian_information_criterion(obs, model, err, nparam):
+    n = len(obs)
+    bic = np.log(n)*nparam - 2*_lnlikelihood(obs, model, err)
+
+    return bic
+
+
 def transit_forecast(trace):
     """
     Calculate the mean transit forecast.
@@ -34,7 +52,50 @@ def transit_forecast(trace):
     return forecast
 
 
-def relative_weights(lc, traces):
+def relative_weights(lcs, traces, nparam):
+    """
+    Calculate the relative weights for the scenarios.
+
+    Parameters
+    ----------
+    lc : iterable
+        A list of `~lightkurve.LightCurve` objects.
+
+    traces : iterable
+        A list of `~pymc3.backends.base.MultiTrace` objects.
+
+    nparam : int
+        The number of free parameters in the model.
+
+    Returns
+    -------
+    weights : ndarray
+        The relative weights for the scenarios.
+    """
+    # Duplicate light curve if only one given
+    if hasattr(lcs, 'flux'):
+        lcs = [lcs]*len(traces)
+
+    # Calculate the median light curve model
+    med_lc_models = [
+        np.median(trace.lc_model, axis=0) for trace in traces
+    ]
+
+    # Calculate the BIC
+    bics = [
+        _bayesian_information_criterion(
+            lc.flux, m, lc.flux_err, nparam
+        ) for lc, m in zip(lcs, med_lc_models)
+    ]
+    dbics = bics - np.min(bics)
+
+    # Weight by the relative BIC values
+    weights = np.exp(dbics/-2)/np.sum(np.exp(dbics/-2))
+
+    return weights
+
+
+def relative_weights_pvalues(lc, traces):
     """
     Calculate the relative weights for the scenarios.
 
