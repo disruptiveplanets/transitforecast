@@ -52,14 +52,14 @@ def transit_forecast(trace):
     return forecast
 
 
-def relative_weights(lcs, traces, nparam):
+def relative_weights(lc, traces, nparam):
     """
     Calculate the relative weights for the scenarios.
 
     Parameters
     ----------
-    lc : iterable
-        A list of `~lightkurve.LightCurve` objects.
+    lc : `~lightkurve.LightCurve`
+        A light curve object with the data.
 
     traces : iterable
         A list of `~pymc3.backends.base.MultiTrace` objects.
@@ -72,10 +72,6 @@ def relative_weights(lcs, traces, nparam):
     weights : ndarray
         The relative weights for the scenarios.
     """
-    # Duplicate light curve if only one given
-    if hasattr(lcs, 'flux'):
-        lcs = [lcs]*len(traces)
-
     # Calculate the median light curve model
     med_lc_models = [
         np.median(trace.lc_model, axis=0) for trace in traces
@@ -85,7 +81,7 @@ def relative_weights(lcs, traces, nparam):
     bics = [
         _bayesian_information_criterion(
             lc.flux, m, lc.flux_err, nparam
-        ) for lc, m in zip(lcs, med_lc_models)
+        ) for m in med_lc_models
     ]
     dbics = bics - np.min(bics)
 
