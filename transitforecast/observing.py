@@ -130,7 +130,7 @@ def relative_weights_pvalues(lc, traces):
     return weights
 
 
-def summarize_windows(trace, tforecast, tdistance=None):
+def summarize_windows(trace, tforecast, tdist=None):
     """
     Summarize all transit windows suggested by the MCMC sampling.
 
@@ -142,7 +142,7 @@ def summarize_windows(trace, tforecast, tdistance=None):
     tforecast : `~numpy.array`
         The time array corresponding to the forecasted transit models.
 
-    tdistance : float, optional
+    tdist : float, optional
         The time distance bewteen peaks in the same units as `tforecast.`
         Defaults to 1/2 the median of the posterior distribution of the period
         in each `~pymc3.backends.base.MultiTrace`.
@@ -158,7 +158,7 @@ def summarize_windows(trace, tforecast, tdistance=None):
     # Identify peaks
     forecast = transit_forecast(trace)
     post_period = np.median(trace.period)
-    if tdistance is None:
+    if tdist is None:
         # Treat peaks within P as a single peak
         tdist = post_period
     distance = int((tdist)/dt)
