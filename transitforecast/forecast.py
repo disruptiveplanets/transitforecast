@@ -244,11 +244,11 @@ def flatten(
     lc : `~lightkurve.LightCurve`
         A light curve object with the data.
 
-    t0 : float, optional
-        Mid-transit time of transit signal to mask.
+    t0 : float or iterable, optional
+        Mid-transit time of transit signal(s) to mask.
 
-    period : float, optional
-        Period of transit signal to mask.
+    period : float or iterable, optional
+        Period of transit signal(s) to mask.
 
     duration : float, optional
         Duration of transit signal to mask. Defaults to 1 hr.
@@ -267,16 +267,18 @@ def flatten(
     trend : ndarray
         The removed flux trend. Only returned if ``return_trend`` is `True`.
     """
-    # Mask transits if an ephemeris is given
+    # Mask transits if any ephemerides are given
+    mask = np.zeros_like(lc.time, dtype=bool)
     if t0 is not None:
-        mask = wotan.transit_mask(
-            time=lc.time,
-            T0=t0,
-            period=period,
-            duration=duration
-        )
-    else:
-        mask = np.zeros_like(lc.time, dtype=bool)
+        t0s = np.array(t0).flatten()
+        periods = np.array(period).flatten()
+        for t0, period in zip(t0s, periods):
+            mask += wotan.transit_mask(
+                time=lc.time,
+                T0=t0,
+                period=period,
+                duration=duration
+            )
 
     # Flatten the light curve
     flux_flat = wotan.flatten(
