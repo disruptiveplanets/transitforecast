@@ -4,7 +4,11 @@ import numpy as np
 import pymc3 as pm
 from scipy.stats import median_abs_deviation
 
-__all__ = ['plot_map_soln', 'plot_posterior_model']
+__all__ = [
+    'plot_map_soln',
+    'plot_phased_posterior_model',
+    'plot_posterior_model'
+]
 
 
 def plot_map_soln(lc, map_soln):
@@ -157,3 +161,82 @@ def plot_posterior_model(lc, trace):
     ax.set_ylabel('Normalized Flux')
 
     return fig, axes
+
+
+def plot_phased_posterior_model(lc, trace):
+    """
+    Plot the phased posterior light curve model.
+
+    Parameters
+    ----------
+    lc : `~lightkurve.LightCurve`
+        A light curve object with the data.
+
+    trace : `~pymc3.backends.base.MultiTrace`
+        A ``MultiTrace`` object that contains the samples.
+
+    Returns
+    -------
+    ax : `~matplotlib.axes.Axes`
+        An Axes object with a plot of the phase-folded posterior model.
+    """
+    # Summary of posteriors
+    varnames = ['period', 't0']
+    func_dict = {
+        'median': lambda x: np.percentile(x, 50),
+        'upper': lambda x: np.percentile(x, 84)-np.percentile(x, 50),
+        'lower': lambda x: np.percentile(x, 50)-np.percentile(x, 16),
+    }
+    summary = pm.summary(
+        trace,
+        varnames=varnames,
+        hdi_prob=0.68,
+        stat_funcs=func_dict,
+        round_to=8,
+    )
+
+    q50 = np.median(trace.lc_model, axis=0)
+    q16 = np.percentile(trace.lc_model, 16, axis=0)
+    q84 = np.percentile(trace.lc_model, 84, axis=0)
+
+    # Phase-folding data
+    post_t0 = summary['median']['t0']
+    post_period = summary['median']['period']
+    cphase = (lc.time - post_t0)/post_period
+    idx_orbit = abs(cphase) < 0.5
+    phase_orbit = cphase[idx_orbit]
+    q16_orbit = q16[idx_orbit]
+    q50_orbit = q50[idx_orbit]
+    q84_orbit = q84[idx_orbit]
+
+    flc = lc.fold(period=post_period, t0=post_t0)
+    bins = int(post_period/(10/(60*24)))
+    blc = flc.bin(bins=bins)
+
+    # Plotting data and model
+    fig, ax = plt.subplots(figsize=(8.5, 4))
+
+    ax.errorbar(
+        flc.time, flc.flux, flc.flux_err,
+        marker='o', ms=1, ls='', lw=0.5, alpha=0.5, color='gray', zorder=-1
+    )
+    ax.errorbar(
+        blc.time, blc.flux, blc.flux_err,
+        marker='o', ms=5, ls='', lw=2, color='k', mfc='white', zorder=10
+    )
+    ax.fill_between(
+        phase_orbit, q16_orbit, q84_orbit, zorder=1, color='C0', alpha=0.5
+    )
+    ax.plot(phase_orbit, q50_orbit, color='white', lw=3, zorder=1)
+    ax.plot(phase_orbit, q50_orbit, color='C0', zorder=1)
+
+    ax.set_xlim(-0.025, 0.025)
+    mad = median_abs_deviation(lc.flux, scale='normal')
+    ax.set_ylim(
+        np.min(q50-3*mad),
+        np.max(q50+3*mad)
+    )
+    ax.set_xlabel('Phase')
+    ax.set_ylabel('Normalized Flux')
+
+    return ax
