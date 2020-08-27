@@ -221,10 +221,10 @@ def observable_windows(
     obs_windows : `~astropy.table.Table`
         A table of the observable windows.
     """
-    # Iterate through windows, determining observable fractions, start and end
-    # times, the duration of the observation, and the observational efficiency
-    # metric.
-    fracs = np.empty(len(windows))
+    # Iterate through windows, determining integrated forecasted signals,
+    # start and end times, the duration of the observation, and
+    # the observational efficiency metric.
+    tbars = np.empty(len(windows))
     t_starts = np.empty(len(windows))
     t_ends = np.empty(len(windows))
     dts = np.empty(len(windows))
@@ -245,31 +245,31 @@ def observable_windows(
 
         # Target is unobservable during window
         if not obs.sum():
-            frac = 0.
+            tbar = np.nan
             t_start = np.nan
             t_end = np.nan
             dt = np.nan
             M = np.nan
         # Target is observable during window
         else:
-            frac = np.trapz(f_win[obs], t_win[obs])/np.trapz(f_win, t_win)
+            tbar = np.trapz(f_win[obs], t_win[obs])
             t_start = t_win[obs][0]
             t_end = t_win[obs][-1]
             dt = t_win[obs].ptp()
-            M = weight*frac/dt
-        fracs[i] = frac
+            M = weight*tbar/dt
+        tbars[i] = tbar
         t_starts[i] = t_start
         t_ends[i] = t_end
         dts[i] = dt
         Ms[i] = M
-    windows['fraction'] = fracs
+    windows['int_signal'] = tbar
     windows['t_start'] = t_starts
     windows['t_end'] = t_ends
     windows['dt'] = dts
     windows['M'] = Ms
 
     # Select only observable windows
-    obs_windows = windows[windows['fraction'] > 0]
+    obs_windows = windows[np.isfinite(windows['dt'])]
 
     # Convert some times to `astropy.time.Time` objects
     obs_windows['t_start'] = Time(obs_windows['t_start'], format='jd')
@@ -280,7 +280,7 @@ def observable_windows(
 
     # Reorder the columns
     cols = [
-        'median', 'lower', 'upper', 't_start', 't_end', 'dt', 'fraction', 'M'
+        'median', 'lower', 'upper', 't_start', 't_end', 'dt', 'int_signal', 'M'
     ]
     obs_windows = obs_windows[cols]
 
