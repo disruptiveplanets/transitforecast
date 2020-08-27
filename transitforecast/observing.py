@@ -136,8 +136,8 @@ def summarize_windows(trace, tforecast, tdist=None):
 
     Parameters
     ----------
-    trace : iterable
-        A `~pymc3.backends.base.MultiTrace` object.
+    trace : `~pymc3.backends.base.MultiTrace`
+        The trace from the MCMC sampling.
 
     tforecast : `~numpy.array`
         The time array corresponding to the forecasted transit model.
@@ -145,7 +145,7 @@ def summarize_windows(trace, tforecast, tdist=None):
     tdist : float, optional
         The time distance bewteen peaks in the same units as `tforecast.`
         Defaults to 1/2 the median of the posterior distribution of the period
-        in the `~pymc3.backends.base.MultiTrace`.
+        in the trace.
 
     Returns
     -------
