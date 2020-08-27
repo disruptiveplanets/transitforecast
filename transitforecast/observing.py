@@ -136,11 +136,11 @@ def summarize_windows(trace, tforecast, tdist=None):
 
     Parameters
     ----------
-    traces : iterable
-        A list of `~pymc3.backends.base.MultiTrace` objects.
+    trace : iterable
+        A `~pymc3.backends.base.MultiTrace` object.
 
     tforecast : `~numpy.array`
-        The time array corresponding to the forecasted transit models.
+        The time array corresponding to the forecasted transit model.
 
     tdist : float, optional
         The time distance bewteen peaks in the same units as `tforecast.`
