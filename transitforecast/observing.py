@@ -256,13 +256,13 @@ def observable_windows(
             t_start = t_win[obs][0]
             t_end = t_win[obs][-1]
             dt = t_win[obs].ptp()
-            M = weight*tbar/dt
+            M = -weight*tbar/dt
         tbars[i] = tbar
         t_starts[i] = t_start
         t_ends[i] = t_end
         dts[i] = dt
         Ms[i] = M
-    windows['int_signal'] = tbar
+    windows['int_signal'] = tbars
     windows['t_start'] = t_starts
     windows['t_end'] = t_ends
     windows['dt'] = dts
@@ -278,9 +278,13 @@ def observable_windows(
     # Add units for dt
     obs_windows['dt'] = obs_windows['dt']*units.d
 
+    # Add weights
+    obs_windows['weight'] = weight
+
     # Reorder the columns
     cols = [
-        'median', 'lower', 'upper', 't_start', 't_end', 'dt', 'int_signal', 'M'
+        'median', 'lower', 'upper', 't_start', 't_end', 'dt',
+        'int_signal', 'weight', 'M'
     ]
     obs_windows = obs_windows[cols]
 
