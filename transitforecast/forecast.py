@@ -63,6 +63,12 @@ def build_model(
     map_soln : dict
         A dictionary with the maximum a posteriori estimates of the variables.
     """
+    # Estimate flux uncertainties if not given
+    idx_nan = np.isnan(lc.flux_err)
+    if idx_nan.any():
+        mad = median_abs_deviation(lc.flux, scale='normal')
+        lc.flux_err[idx_nan] = mad
+
     # Ensure right data type for theano
     dtype = np.dtype('float64')
     dts = [arr.dtype for arr in [lc.time, lc.flux, lc.flux_err]]
