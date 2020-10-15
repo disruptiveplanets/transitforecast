@@ -2,6 +2,7 @@
 import exoplanet as xo
 import multiprocessing
 import numpy as np
+import pandas as pd
 import pymc3 as pm
 import theano.tensor as tt
 import transitleastsquares as tls
@@ -396,6 +397,104 @@ def get_priors_from_tic(tic_id):
     pri_r_star = np.append(pri_r_star_mean, pri_r_star_err)
 
     return pri_m_star, pri_r_star
+
+
+def get_trial_ephemerides(
+    t0, period=None, rprs=None,
+    j_max=1, k_max=1, min_period=0., max_period=np.inf
+):
+    """
+    Get the set of trial ephemerides.
+
+    Parameters
+    ----------
+    t0 : iterable
+        The mid-transit times of candidate signals.
+
+    period : iterable, optional
+        The periods of candidate signals. Calculated from `t0` if not provided.
+
+    rprs : iterable, optional
+        The planet-to-star radius ratios. Defaults to `NaN`.
+
+    j_max : int, optional
+        The maximum j value for j:k aliased periods to calculate.
+
+    k_max : int, optional
+        The maximum k value for j:k aliased periods to calculate.
+
+    min_period : float, optional
+        The minimum period of interest.
+
+    max_period : float, optional
+        The maximum period of interest.
+
+    Returns
+    -------
+    ephem : pandas.DataFrame
+        The trial ephemerides.
+    """
+    # Make array of radius ratios, if not given
+    if rprs is None:
+        rprs = np.full_like(t0, np.nan)
+
+    # Calculate periods, if not given
+    if period is None:
+        t0_arr = np.array([])
+        period_arr = np.array([])
+        rprs_arr = np.array([])
+
+        for i, t in enumerate(t0[:-1]):
+            p = np.abs(t0[i + 1:] - t)
+            t0_arr = np.append(t0_arr, t*np.ones_like(p))
+            period_arr = np.append(period_arr, p)
+            rprs_arr = np.append(rprs_arr, rprs[i]*np.ones_like(p))
+        t0 = t0_arr
+        period = period_arr
+        rprs = rprs_arr
+
+    # Ensure that the arrays are the right length
+    array_lengths_good = all(len(arr) == len(t0) for arr in [t0, period, rprs])
+    if not array_lengths_good:
+        raise ValueError(
+            't0, period, and rprs arrays must have the same length.'
+        )
+
+    # Calculate period ratios
+    jj, kk = np.meshgrid(
+        np.arange(j_max)+1,
+        np.arange(k_max)+1
+    )
+    period_ratio_matrix = jj/kk
+    period_ratios = np.unique(period_ratio_matrix.flatten())
+
+    # Compile list of ephemerides
+    t0s = (
+        t0[:, np.newaxis] * np.ones_like(period_ratios)[np.newaxis, :]
+    ).ravel()
+    periods = (
+        period[:, np.newaxis] * period_ratios[np.newaxis, :]
+    ).ravel()
+    rprss = (
+        rprs[:, np.newaxis] * np.ones_like(period_ratios)[np.newaxis, :]
+    ).ravel()
+
+    # Truncate to periods within range
+    idx_inrange = np.logical_and(
+        periods >= min_period,
+        periods <= max_period
+    )
+    t0s = t0s[idx_inrange]
+    periods = periods[idx_inrange]
+    rprss = rprss[idx_inrange]
+
+    ephem = pd.DataFrame({
+        't0': t0s,
+        'period': periods,
+        'rprs': rprss
+    }).drop_duplicates()
+
+    return ephem
 
 
 def sample_from_model(
