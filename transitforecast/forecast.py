@@ -470,6 +470,9 @@ def get_trial_ephemerides(
     period_ratios = np.unique(period_ratio_matrix.flatten())
 
     # Compile list of ephemerides
+    t0 = np.array(t0)
+    period = np.array(period)
+    rprs = np.array(rprs)
     t0s = (
         t0[:, np.newaxis] * np.ones_like(period_ratios)[np.newaxis, :]
     ).ravel()
