@@ -17,6 +17,7 @@ __all__ = [
     'flatten',
     'get_forecast_window',
     'get_priors_from_tic',
+    'get_trial_ephemerides',
     'sample_from_model'
 ]
 
