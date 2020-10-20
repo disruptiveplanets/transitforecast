@@ -312,7 +312,7 @@ def flatten(
         return lcflat
 
 
-def get_forecast_window(size=30*units.day, cadence=2*units.min, start=None):
+def get_forecast_window(start=None, size=30*units.day, cadence=2*units.min):
     """
     Get an array of times in JD to forecast transits.
 
@@ -320,6 +320,9 @@ def get_forecast_window(size=30*units.day, cadence=2*units.min, start=None):
 
     Parameters
     ----------
+    start : `~astropy.time.Time`, optional
+        Start of the forecast window. `None` defaults to now.
+
     size : float or `~astropy.units.Quantity`, optional
         Size of the forecast window. Defaults to days if unit not specified.
 
@@ -327,14 +330,13 @@ def get_forecast_window(size=30*units.day, cadence=2*units.min, start=None):
         Cadence of the times in the forecast window. Defaults to 2-min if
         unit not specfied.
 
-    start : `~astropy.time.Time`, optional
-        Start of the forecast window. `None` defaults to now.
-
     Returns
     -------
     tforecast : `~numpy.ndarray`
         Array of times in JD.
     """
+    if start is None:
+        start = Time.now()
     if type(size) is units.Quantity:
         size = size.to(units.day)
     else:
@@ -343,8 +345,6 @@ def get_forecast_window(size=30*units.day, cadence=2*units.min, start=None):
         cadence = cadence.to(units.day)
     else:
         cadence = cadence*units.day
-    if start is None:
-        start = Time.now()
 
     forecast_times = start + np.arange(0, size.value, cadence.value)
     tforecast = forecast_times.jd
