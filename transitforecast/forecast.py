@@ -165,8 +165,10 @@ def build_model(
         texp = np.median(np.diff(tforecast))
         lcforecast = xo.LimbDarkLightCurve(
             u).get_light_curve(orbit=orbit, r=r*r_star, t=tforecast, texp=texp)
-        forecast = pm.math.sum(lcforecast, axis=-1)
-        forecast = pm.Deterministic('forecast', forecast)
+        forecast_transit_sig = pm.math.sum(lcforecast, axis=-1)
+        forecast_transit_sig = pm.Deterministic(
+            'forecast_transit_sig', forecast_transit_sig
+        )
 
         #######################
         # Track some parameters
