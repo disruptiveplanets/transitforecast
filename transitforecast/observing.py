@@ -33,26 +33,33 @@ def _bayesian_information_criterion(obs, model, err, nparam):
     return bic
 
 
-def transit_forecast(trace):
+def transit_forecast(lc, traces):
     """
     Calculate the mean transit forecast.
 
     Parameters
     ----------
-    trace : `~pymc3.backends.base.MultiTrace`
-        The MCMC trace object.
+    lc : `~lightkurve.LightCurve`
+        A light curve object with the data.
+
+    trace : iterable
+        A list of `~pymc3.backends.base.MultiTrace` MCMC trace objects.
 
     Returns
     -------
     forecast : ndarray
-        The mean transit forecast for the scenario.
+        The transit forecast.
     """
-    forecast = trace.forecast_transit_sig.mean(axis=0)
+    weights = relative_weights(lc, traces)
+    forecast_transit_sigs = [
+        trace.forecast_transit_sig.mean(axis=0) for trace in traces
+    ]
+    forecast = (- weights[:, np.newaxis] * forecast_transit_sigs).sum(axis=0)
 
     return forecast
 
 
-def relative_weights(lc, traces, nparam):
+def relative_weights(lc, traces, nparam=9):
     """
     Calculate the relative weights for the scenarios.
 
