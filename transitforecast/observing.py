@@ -2,7 +2,7 @@
 import astroplan as ap
 import astropy.table as astrotab
 import numpy as np
-from astropy import units
+import pandas as pd
 from astropy.time import Time
 from scipy.signal import find_peaks
 from scipy.stats import chi2
@@ -219,16 +219,13 @@ def summarize_windows(trace, tforecast, tdist=None):
 
 
 def observable_windows(
-    windows, tforecast, forecast, target, site, constraints, weight=1.
+    tforecast, forecast, target, site, constraints, max_obs_duration=np.inf
 ):
     """
-    Determine which windows are observable, given constraints.
+    Identify observable follow-up windows.
 
     Parameters
     ----------
-    windows : `~astropy.table.Table`
-        A table of the forecasted windows.
-
     tforecast : `~numpy.array`
         The time array for the forecasted transit models.
 
@@ -244,82 +241,82 @@ def observable_windows(
     constraints : iterable
         A list of `~astroplan.Constraint` objects.
 
-    weight : float, optional
-        Relative weight of the scenario. Defaults to 1 if not specified.
+    max_obs_duration : float
+        The maximum duration of an observation in days.
 
     Returns
     -------
-    obs_windows : `~astropy.table.Table`
+    windows : `~pandas.DataFrame`
         A table of the observable windows.
     """
-    # Iterate through windows, determining integrated forecasted signals,
-    # start and end times, the duration of the observation, and
-    # the observational efficiency metric.
-    tbars = np.empty(len(windows))
-    t_starts = np.empty(len(windows))
-    t_ends = np.empty(len(windows))
-    dts = np.empty(len(windows))
-    Ms = np.empty(len(windows))
-    for i, window in enumerate(windows):
-        idx = np.logical_and(
-            tforecast >= window['lower'].jd,
-            tforecast <= window['upper'].jd
+    observability = ap.is_event_observable(
+        constraints, site, target, times=Time(tforecast + 2457000, format='jd')
+    ).flatten()
+    idx_observable = np.where(observability)[0]
+    idx_window_list = np.split(
+        idx_observable, np.where(np.diff(idx_observable) != 1)[0] + 1
+    )
+    dts = []
+    t_starts = []
+    t_ends = []
+    t_maxs = []
+    Ms = []
+    for idx_window in idx_window_list:
+        t_max = (tforecast[idx_window])[np.argmax(forecast[idx_window])]
+        idx_window = _refine_window(
+            tforecast, t_max, idx_window, max_obs_duration
         )
-        t_win = tforecast[idx]
-        f_win = forecast[idx]
-        obs = ap.is_event_observable(
-            constraints,
-            site,
-            target,
-            Time(t_win, format='jd')
-        ).flatten()
+        t_start = (tforecast[idx_window]).min()
+        t_end = (tforecast[idx_window]).max()
+        dt = (tforecast[idx_window]).ptp()
+        M = np.trapz(forecast[idx_window], tforecast[idx_window]) / dt
 
-        # Target is unobservable during window
-        if not obs.sum():
-            tbar = np.nan
-            t_start = np.nan
-            t_end = np.nan
-            dt = np.nan
-            M = np.nan
-        # Target is observable during window
-        else:
-            tbar = np.trapz(f_win[obs], t_win[obs])
-            t_start = t_win[obs][0]
-            t_end = t_win[obs][-1]
-            dt = t_win[obs].ptp()
-            M = -weight*tbar/dt
-        tbars[i] = tbar
-        t_starts[i] = t_start
-        t_ends[i] = t_end
-        dts[i] = dt
-        Ms[i] = M
-    windows['int_signal'] = tbars
-    windows['t_start'] = t_starts
-    windows['t_end'] = t_ends
-    windows['dt'] = dts
-    windows['M'] = Ms
+        dts.append(dt)
+        t_starts.append(t_start)
+        t_ends.append(t_end)
+        t_maxs.append(t_max)
+        Ms.append(M)
 
-    # Select only observable windows
-    obs_windows = windows[np.isfinite(windows['dt'])]
+    windows = pd.DataFrame({
+        't_start': t_starts,
+        't_max': t_maxs,
+        't_end': t_ends,
+        'dt': dts,
+        'M': Ms
+    }).sort_values('M', ascending=False)
 
-    # Convert some times to `astropy.time.Time` objects
-    obs_windows['t_start'] = Time(obs_windows['t_start'], format='jd')
-    obs_windows['t_end'] = Time(obs_windows['t_end'], format='jd')
+    return windows
 
-    # Add units for dt
-    obs_windows['dt'] = obs_windows['dt']*units.d
 
-    # Add weights
-    obs_windows['weight'] = weight
+def _refine_window(tforecast, t_max, idx_window, max_obs_duration):
+    """
+    Refine an observation window.
+    """
+    t_start = (tforecast[idx_window]).min()
+    t_end = (tforecast[idx_window]).max()
 
-    # Reorder the columns
-    cols = [
-        'median', 'lower', 'upper', 't_start', 't_end', 'dt',
-        'int_signal', 'weight', 'M'
-    ]
-    obs_windows = obs_windows[cols]
+    if (t_end - t_start) > max_obs_duration:
+        t1 = t_max - max_obs_duration / 2.
+        t2 = t_max + max_obs_duration / 2.
+        buffer_1 = t1 - t_start
+        buffer_2 = t_end - t2
+        buffers = [buffer_1, buffer_2]
+        # If t1 and t2 not t_win, find new start and end times
+        if not np.min(buffers) > 0:
+            # If t_max closer to t_start, use original start time
+            # and adjust end time, unless would be outside the window
+            if np.argmin(buffers) == 0:
+                t1 = t_start
+                t2 = np.min([t_end, t_start + max_obs_duration])
+            # If t_max closer to t_end, use original end time
+            # and adjust start time, unless would be outside the window
+            elif np.argmin(buffers) == 1:
+                t1 = np.max([t_start, t_end - max_obs_duration])
+                t2 = t_end
+        # Calculate new idx_window
+        idx_window = np.where((tforecast >= t1) & (tforecast <= t2))[0]
 
-    return obs_windows
+    return idx_window
 
 
 def _weighted_percentile(data, weights, percentile):
