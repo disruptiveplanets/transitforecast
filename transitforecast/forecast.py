@@ -418,7 +418,7 @@ def get_trial_ephemerides(
         The periods of candidate signals. Calculated from `t0` if not provided.
 
     rprs : iterable, optional
-        The planet-to-star radius ratios. Defaults to 0.
+        The planet-to-star radius ratios. Defaults to 0.1.
 
     j_max : int, optional
         The maximum j value for j:k aliased periods to calculate.
@@ -442,7 +442,7 @@ def get_trial_ephemerides(
 
     # Make array of radius ratios, if not given
     if rprs is None:
-        rprs = np.zeros_like(t0)
+        rprs = np.ones_like(t0) * 0.1
 
     # Calculate periods, if not given
     if period is None:
