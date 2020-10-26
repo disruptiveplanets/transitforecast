@@ -437,6 +437,9 @@ def get_trial_ephemerides(
     ephem : pandas.DataFrame
         The trial ephemerides.
     """
+    # Use numpy array
+    t0 = np.array(t0)
+
     # Make array of radius ratios, if not given
     if rprs is None:
         rprs = np.full_like(t0, np.nan)
@@ -472,7 +475,6 @@ def get_trial_ephemerides(
     period_ratios = np.unique(period_ratio_matrix.flatten())
 
     # Compile list of ephemerides
-    t0 = np.array(t0)
     period = np.array(period)
     rprs = np.array(rprs)
     t0s = (
