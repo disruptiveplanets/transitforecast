@@ -140,7 +140,6 @@ def build_model(
         # Model transit light curve
         light_curves = xo.LimbDarkLightCurve(
             u).get_light_curve(orbit=orbit, r=r*r_star, t=lc.time)
-        pm.Deterministic('light_curves', light_curves)
         transit_model = pm.math.sum(light_curves, axis=-1)
         transit_model = pm.Deterministic('transit_model', transit_model)
 
