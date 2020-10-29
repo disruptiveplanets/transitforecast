@@ -12,6 +12,31 @@ __all__ = [
 ]
 
 
+def _median_light_curve(trace, time):
+    texp = np.median(np.diff(time))
+    pt_lc_models = []
+    # Calculate the model for each point in the trace
+    for i, pt in enumerate(trace.points()):
+        # `batman` is much faster than `exoplanet` in this case
+        params = batman.TransitParams()
+        params.t0 = pt['t0']
+        params.per = pt['period']
+        params.rp = pt['r']
+        params.a = pt['aRs']
+        params.inc = pt['incl']
+        params.ecc = 0.
+        params.w = 90.
+        params.u = pt['u']
+        params.limb_dark = 'quadratic'
+        m = batman.TransitModel(params, time, exp_time=texp)
+        pt_lc_model = m.light_curve(params) - 1 + pt['f0']
+        pt_lc_models.append(pt_lc_model)
+    # Take the median
+    med_lc_model = np.median(pt_lc_models, axis=0)
+
+    return med_lc_model
+
+
 def _lnlikelihood(obs, model, err):
     n = len(obs)
     lnlike = (
@@ -105,7 +130,7 @@ def relative_weights(lc, traces, nparam=9):
     """
     # Calculate the median light curve model
     med_lc_models = [
-        np.median(trace.lc_model, axis=0) for trace in traces
+        _median_light_curve(trace, lc.time) for trace in traces
     ]
 
     # Calculate the BIC

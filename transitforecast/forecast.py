@@ -150,7 +150,7 @@ def build_model(
         )
 
         # The full model
-        lc_model = pm.Deterministic('lc_model', transit_model+f0)
+        lc_model = transit_model + f0
 
         #######################
         # Track some parameters
