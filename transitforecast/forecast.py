@@ -23,8 +23,7 @@ __all__ = [
 
 
 def build_model(
-    lc, pri_t0, pri_p, pri_rprs, pri_m_star, pri_r_star, tforecast,
-    verbose=False
+    lc, pri_t0, pri_p, pri_rprs, pri_m_star, pri_r_star, verbose=False
 ):
     """
     Build the transit light curve model.
@@ -50,9 +49,6 @@ def build_model(
     pri_r_star : ndarray
         Mean and standard deviation of the stellar radius estimate
         in solar radii.
-
-    tforecast : iterable
-        The times for the forecast. Assumes same units as ``lc.time``.
 
     verbose : bool, optional
         Print details of optimization.
