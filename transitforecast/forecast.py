@@ -141,7 +141,6 @@ def build_model(
         light_curves = xo.LimbDarkLightCurve(
             u).get_light_curve(orbit=orbit, r=r*r_star, t=lc.time)
         transit_model = pm.math.sum(light_curves, axis=-1)
-        transit_model = pm.Deterministic('transit_model', transit_model)
 
         # The baseline flux
         f0 = pm.Normal(
