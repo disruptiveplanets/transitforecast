@@ -125,30 +125,6 @@ def relative_weights(lc, traces, nparam=9):
     return weights
 
 
-def combine_forecasts(forecasts, weights=None):
-    """
-    Calculate the combined transit forecast.
-
-    Parameters
-    ----------
-    forecasts : iterable
-        A list of the transit forecasts.
-
-    weights : iterable, optional.
-        Relative weights for the forecasts. Defaults to uniform weight.
-
-    Returns
-    -------
-    combined_forecast : `~numpy.array`
-        The combined (weighted) forecast.
-    """
-    if weights is None:
-        weights = np.ones(len(forecasts))
-    combined_forecast = np.sum(weights[:, None]*forecasts, axis=0)
-
-    return combined_forecast
-
-
 def summarize_windows(trace, tforecast, tdist=None):
     """
     Summarize transit windows suggested by the MCMC sampling of one scenario.
