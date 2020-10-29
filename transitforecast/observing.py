@@ -1,16 +1,13 @@
 """Observing forecasted events."""
 import astroplan as ap
-import astropy.table as astrotab
 import batman
 import numpy as np
 import pandas as pd
 from astropy.time import Time
-from scipy.signal import find_peaks
 
 __all__ = [
-    'transit_forecast',
     'relative_weights',
-    'summarize_windows',
+    'transit_forecast',
     'observable_windows'
 ]
 
@@ -125,63 +122,6 @@ def relative_weights(lc, traces, nparam=9):
     return weights
 
 
-def summarize_windows(trace, tforecast, tdist=None):
-    """
-    Summarize transit windows suggested by the MCMC sampling of one scenario.
-
-    Parameters
-    ----------
-    trace : `~pymc3.backends.base.MultiTrace`
-        The trace from the MCMC sampling.
-
-    tforecast : `~numpy.array`
-        The time array corresponding to the forecasted transit model.
-
-    tdist : float, optional
-        The time distance bewteen peaks in the same units as `tforecast.`
-        Defaults to 1/2 the median of the posterior distribution of the period
-        in the trace.
-
-    Returns
-    -------
-    windows : `~astropy.table.Table`
-        A table of the identified windows.
-    """
-    # Define some useful variables
-    dt = np.median(np.diff(tforecast))
-
-    # Identify peaks
-    forecast = transit_forecast(trace)
-    post_period = np.median(trace.period)
-    if tdist is None:
-        # Treat peaks within P as a single peak
-        tdist = post_period
-    distance = int((tdist)/dt)
-    idx_peaks, _ = find_peaks(-forecast, distance=distance)
-    tpeaks = tforecast[idx_peaks]
-
-    # Summarize transit windows
-    medians = np.empty(tpeaks.size)
-    lowers = np.empty(tpeaks.size)
-    uppers = np.empty(tpeaks.size)
-    for i, tpeak in enumerate(tpeaks):
-        idx = np.abs(tforecast-tpeak) < 0.5*tdist
-        t_win = tforecast[idx]
-        f_win = forecast[idx]
-        medians[i] = _weighted_percentile(t_win, f_win, 50.)
-        lowers[i] = t_win[np.nonzero(f_win)[0].min()]
-        uppers[i] = t_win[np.nonzero(f_win)[0].max()]
-
-    # Store results in a astropy.table.Table
-    windows = astrotab.Table({
-        'median': Time(medians, format='jd', scale='tdb'),
-        'lower': Time(lowers, format='jd', scale='tdb'),
-        'upper': Time(uppers, format='jd', scale='tdb')
-    })
-
-    return windows
-
-
 def observable_windows(
     tforecast, forecast, target, site, constraints, max_obs_duration=np.inf
 ):
@@ -281,29 +221,3 @@ def _refine_window(tforecast, t_max, idx_window, max_obs_duration):
         idx_window = np.where((tforecast >= t1) & (tforecast <= t2))[0]
 
     return idx_window
-
-
-def _weighted_percentile(data, weights, percentile):
-    """
-    Calculate the weighted percentile of a data set.
-
-    Parameters
-    ----------
-    data : iterable
-        The data (or "x" values).
-
-    weights : iterable
-        The weights (or "y" values).
-
-    percentile : float
-        The percentile to calculate.
-
-    Returns
-    -------
-    value : float
-        The value corresponding to the percentile.
-    """
-    cumsum = np.cumsum(weights)
-    percentiles = 100*(cumsum-0.5*weights)/cumsum[-1]
-    value = np.interp(percentile, percentiles, data)
-    return value
