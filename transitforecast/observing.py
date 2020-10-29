@@ -1,6 +1,7 @@
 """Observing forecasted events."""
 import astroplan as ap
 import astropy.table as astrotab
+import batman
 import numpy as np
 import pandas as pd
 from astropy.time import Time
@@ -33,7 +34,7 @@ def _bayesian_information_criterion(obs, model, err, nparam):
     return bic
 
 
-def transit_forecast(lc, traces):
+def transit_forecast(lc, traces, tforecast):
     """
     Calculate the mean transit forecast.
 
@@ -45,16 +46,43 @@ def transit_forecast(lc, traces):
     trace : iterable
         A list of `~pymc3.backends.base.MultiTrace` MCMC trace objects.
 
+    tforecast : `~numpy.array`
+        The times to calculate the forecast.
+
     Returns
     -------
     forecast : ndarray
         The transit forecast.
     """
     weights = relative_weights(lc, traces)
-    forecast_transit_sigs = [
-        trace.forecast_transit_sig.mean(axis=0) for trace in traces
-    ]
-    forecast = (- weights[:, np.newaxis] * forecast_transit_sigs).sum(axis=0)
+    texp = np.median(np.diff(tforecast))
+    transit_signals = []
+    # For each trace ...
+    for trace in traces:
+        pt_transit_signals = []
+        # Calculate the forecast for each point in the trace
+        for i, pt in enumerate(trace.points()):
+            # `batman` is much faster than `exoplanet` in this case
+            params = batman.TransitParams()
+            params.t0 = pt['t0']
+            params.per = pt['period']
+            params.rp = pt['r']
+            params.a = pt['aRs']
+            params.inc = pt['incl']
+            params.ecc = 0.
+            params.w = 90.
+            params.u = pt['u']
+            params.limb_dark = 'quadratic'
+            m = batman.TransitModel(params, tforecast, exp_time=texp)
+            pt_transit_signal = m.light_curve(params) - 1
+            pt_transit_signals.append(pt_transit_signal)
+        # Take the mean of the point-by-point transit models
+        transit_signal = np.array(pt_transit_signals).mean(axis=0)
+        transit_signals.append(transit_signal)
+    # And use the per-trace means, and their weights, to calculate the forecast
+    forecast = (
+        - weights[:, np.newaxis] * np.array(transit_signals)
+    ).sum(axis=0)
 
     return forecast
 

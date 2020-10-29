@@ -158,18 +158,6 @@ def build_model(
         # The full model
         lc_model = pm.Deterministic('lc_model', transit_model+f0)
 
-        ########################
-        # Forecast transits
-        ########################
-
-        texp = np.median(np.diff(tforecast))
-        lcforecast = xo.LimbDarkLightCurve(
-            u).get_light_curve(orbit=orbit, r=r*r_star, t=tforecast, texp=texp)
-        forecast_transit_sig = pm.math.sum(lcforecast, axis=-1)
-        forecast_transit_sig = pm.Deterministic(
-            'forecast_transit_sig', forecast_transit_sig
-        )
-
         #######################
         # Track some parameters
         #######################
