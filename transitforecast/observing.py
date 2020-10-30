@@ -56,7 +56,9 @@ def _bayesian_information_criterion(obs, model, err, nparam):
     return bic
 
 
-def transit_forecast(tforecast, lc, traces, weights=None):
+def transit_forecast(
+    tforecast, lc, traces, weights=None, quick=True, threshold=1e-6
+):
     """
     Calculate the mean transit forecast.
 
@@ -74,6 +76,13 @@ def transit_forecast(tforecast, lc, traces, weights=None):
     weights : iterable, optional
         The weights for the traces. Calculated from `traces` if not provided.
 
+    quick : bool, optional
+        Calculate the forecast quickly by ignoring traces with weights below a
+        threshold.
+
+    threshold : float, optional
+        The threshold for ignoring low-weighted scenarios. Defaults to 1 ppm.
+
     Returns
     -------
     forecast : ndarray
@@ -83,13 +92,21 @@ def transit_forecast(tforecast, lc, traces, weights=None):
     if weights is None:
         weights = relative_weights(lc, traces)
 
+    # Select subset if performing quick calculation
+    if quick:
+        idx_subset = np.where(np.array(weights) > threshold)[0]
+        traces = [
+            traces[i] for i in idx_subset
+        ]
+        weights = np.array(weights)[idx_subset]
+
     texp = np.median(np.diff(tforecast))
     transit_signals = []
     # For each trace ...
     for trace in traces:
         pt_transit_signals = []
         # Calculate the forecast for each point in the trace
-        for i, pt in enumerate(trace.points()):
+        for pt in trace.points():
             # `batman` is much faster than `exoplanet` in this case
             params = batman.TransitParams()
             params.t0 = pt['t0']
