@@ -1,5 +1,6 @@
 """Observing forecasted events."""
 import astroplan as ap
+import astropy.units as units
 import batman
 import numpy as np
 import pandas as pd
@@ -155,8 +156,8 @@ def observable_windows(
 
     Parameters
     ----------
-    tforecast : `~numpy.array`
-        The time array for the forecasted transit models.
+    tforecast : `~astropy.time.Time`
+        The time array for the transit forecast.
 
     forecast : `~numpy.array`
         The transit forecast.
@@ -170,17 +171,25 @@ def observable_windows(
     constraints : iterable
         A list of `~astroplan.Constraint` objects.
 
-    max_obs_duration : float
-        The maximum duration of an observation in days.
+    max_obs_duration : float or `~astropy.units.Quantity`, optional
+        The maximum duration of an observation. Defaults to days if unit not
+        specified.
 
     Returns
     -------
     windows : `~pandas.DataFrame`
         A table of the observable windows.
     """
+    if type(max_obs_duration) is units.Quantity:
+        max_obs_duration = max_obs_duration.to(units.day).value
+
+    # For simplicity, just use BJD times
+    times = tforecast.jd
+
     observability = ap.is_event_observable(
-        constraints, site, target, times=Time(tforecast + 2457000, format='jd')
+        constraints, site, target, times=tforecast
     ).flatten()
+
     idx_observable = np.where(observability)[0]
     idx_window_list = np.split(
         idx_observable, np.where(np.diff(idx_observable) != 1)[0] + 1
@@ -191,14 +200,14 @@ def observable_windows(
     t_maxs = []
     Ms = []
     for idx_window in idx_window_list:
-        t_max = (tforecast[idx_window])[np.argmax(forecast[idx_window])]
+        t_max = (times[idx_window])[np.argmax(forecast[idx_window])]
         idx_window = _refine_window(
-            tforecast, t_max, idx_window, max_obs_duration
+            times, t_max, idx_window, max_obs_duration
         )
-        t_start = (tforecast[idx_window]).min()
-        t_end = (tforecast[idx_window]).max()
-        dt = (tforecast[idx_window]).ptp()
-        M = np.trapz(forecast[idx_window], tforecast[idx_window]) / dt
+        t_start = (times[idx_window]).min()
+        t_end = (times[idx_window]).max()
+        dt = (times[idx_window]).ptp()
+        M = np.trapz(forecast[idx_window], times[idx_window]) / dt
 
         dts.append(dt)
         t_starts.append(t_start)
@@ -217,12 +226,12 @@ def observable_windows(
     return windows
 
 
-def _refine_window(tforecast, t_max, idx_window, max_obs_duration):
+def _refine_window(times, t_max, idx_window, max_obs_duration):
     """
     Refine an observation window.
     """
-    t_start = (tforecast[idx_window]).min()
-    t_end = (tforecast[idx_window]).max()
+    t_start = (times[idx_window]).min()
+    t_end = (times[idx_window]).max()
 
     if (t_end - t_start) > max_obs_duration:
         t1 = t_max - max_obs_duration / 2.
@@ -243,6 +252,6 @@ def _refine_window(tforecast, t_max, idx_window, max_obs_duration):
                 t1 = np.max([t_start, t_end - max_obs_duration])
                 t2 = t_end
         # Calculate new idx_window
-        idx_window = np.where((tforecast >= t1) & (tforecast <= t2))[0]
+        idx_window = np.where((times >= t1) & (times <= t2))[0]
 
     return idx_window
