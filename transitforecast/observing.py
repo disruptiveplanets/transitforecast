@@ -180,7 +180,12 @@ def observable_windows(
     windows : `~pandas.DataFrame`
         A table of the observable windows.
     """
-    if type(max_obs_duration) is units.Quantity:
+    if not isinstance(tforecast, Time):
+        raise TypeError(
+            'The times must be specified with an astropy.time.Time instance.'
+        )
+
+    if isinstance(max_obs_duration, units.Quantity):
         max_obs_duration = max_obs_duration.to(units.day).value
 
     # For simplicity, just use BJD times
