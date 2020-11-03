@@ -64,7 +64,7 @@ def transit_forecast(
 
     Parameters
     ----------
-    tforecast : `~numpy.array`
+    tforecast : `~astroy.time.Time`
         The times to calculate the forecast.
 
     lc : `~lightkurve.LightCurve`
@@ -88,6 +88,11 @@ def transit_forecast(
     forecast : ndarray
         The transit forecast.
     """
+    if not isinstance(tforecast, Time):
+        raise TypeError(
+            'The times must be specified with an astropy.time.Time instance.'
+        )
+
     # Calculate weights if not provided
     if weights is None:
         weights = relative_weights(lc, traces)
@@ -100,7 +105,9 @@ def transit_forecast(
         ]
         weights = np.array(weights)[idx_subset]
 
-    texp = np.median(np.diff(tforecast))
+    # Assuming lc.time is in BJD
+    times = tforecast.jd
+    texp = np.median(np.diff(times))
     transit_signals = []
     # For each trace ...
     for trace in traces:
@@ -118,7 +125,7 @@ def transit_forecast(
             params.w = 90.
             params.u = pt['u']
             params.limb_dark = 'quadratic'
-            m = batman.TransitModel(params, tforecast, exp_time=texp)
+            m = batman.TransitModel(params, times, exp_time=texp)
             pt_transit_signal = m.light_curve(params) - 1
             pt_transit_signals.append(pt_transit_signal)
         # Take the mean of the point-by-point transit models
