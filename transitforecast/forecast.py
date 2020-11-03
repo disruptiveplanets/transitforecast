@@ -1,4 +1,5 @@
 """Forecasting transit events."""
+import astrolan as ap
 import exoplanet as xo
 import multiprocessing
 import numpy as np
@@ -316,8 +317,8 @@ def get_forecast_window(start=None, size=30*units.day, cadence=2*units.min):
 
     Returns
     -------
-    tforecast : `~numpy.ndarray`
-        Array of times in JD.
+    tforecast : `~astropy.time.Time`
+        Array of times.
     """
     if start is None:
         start = Time.now()
@@ -330,8 +331,9 @@ def get_forecast_window(start=None, size=30*units.day, cadence=2*units.min):
     else:
         cadence = cadence*units.day
 
-    forecast_times = start + np.arange(0, size.value, cadence.value)
-    tforecast = forecast_times.jd
+    tforecast = ap.time_grid_from_range(
+        [start, start+size], cadence
+    )
 
     return tforecast
 
