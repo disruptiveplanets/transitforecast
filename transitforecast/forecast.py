@@ -1,5 +1,5 @@
 """Forecasting transit events."""
-import astrolan as ap
+import astroplan as ap
 import exoplanet as xo
 import multiprocessing
 import numpy as np
