@@ -486,6 +486,9 @@ def get_trial_ephemerides(
         'rprs': rprss
     }).drop_duplicates()
 
+    # Sort by t0 and then period
+    ephem = ephem.sort_values(['t0', 'period'])
+
     return ephem
 
 
