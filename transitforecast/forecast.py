@@ -487,7 +487,7 @@ def get_trial_ephemerides(
     }).drop_duplicates()
 
     # Sort by t0 and then period
-    ephem = ephem.sort_values(['t0', 'period'])
+    ephem = ephem.sort_values(['t0', 'period']).reset_index(drop=True)
 
     return ephem
 
