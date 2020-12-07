@@ -90,14 +90,14 @@ def build_model(
         m_star = pm.Normal(
             'm_star',
             mu=pri_m_star[0],
-            sd=pri_m_star[1]
+            sigma=pri_m_star[1]
         )
 
         # Stellar radius
         r_star = pm.Normal(
             'r_star',
             mu=pri_r_star[0],
-            sd=pri_r_star[1]
+            sigma=pri_r_star[1]
         )
 
         # Quadratic limb-darkening parameters
@@ -155,7 +155,7 @@ def build_model(
         f0 = pm.Normal(
             'f0',
             mu=np.median(lc.flux),
-            sd=median_abs_deviation(lc.flux, scale='normal')
+            sigma=median_abs_deviation(lc.flux, scale='normal')
         )
 
         # The full model
@@ -205,11 +205,11 @@ def build_model(
         x2 = pm.Deterministic('x2', x2)
 
 #         # Fit for variance
-#         logs2 = pm.Normal('logs2', mu=np.log(np.var(lc.flux)), sd=1)
+#         logs2 = pm.Normal('logs2', mu=np.log(np.var(lc.flux)), sigma=1)
 #         sigma = pm.Deterministic('sigma', pm.math.sqrt(pm.math.exp(logs2)))
 
         # The likelihood function
-        pm.Normal('obs', mu=lc_model, sd=lc.flux_err, observed=lc.flux)
+        pm.Normal('obs', mu=lc_model, sigma=lc.flux_err, observed=lc.flux)
 
         # Fit for the maximum a posteriori parameters
         map_soln = xo.optimize(
