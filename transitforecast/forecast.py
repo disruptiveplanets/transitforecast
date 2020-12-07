@@ -62,6 +62,14 @@ def build_model(
     map_soln : dict
         A dictionary with the maximum a posteriori estimates of the variables.
     """
+    # Ignore warnings from theano, unless specified elsewise
+    if not verbose:
+        warnings.filterwarnings(
+            action='ignore',
+            category=FutureWarning,
+            module='theano'
+        )
+
     # Ensure right data type for theano
     dtype = np.dtype('float64')
     dts = [arr.dtype for arr in [lc.time, lc.flux, lc.flux_err]]
@@ -204,24 +212,24 @@ def build_model(
         pm.Normal('obs', mu=lc_model, sd=lc.flux_err, observed=lc.flux)
 
         # Fit for the maximum a posteriori parameters
-        with warnings.catch_warnings():
-            if not verbose:
-                warnings.simplefilter('ignore', FutureWarning)
-            map_soln = xo.optimize(
-                start=model.test_point, verbose=verbose
-            )
-            map_soln = xo.optimize(
-                start=map_soln, vars=[f0, period, t0, r], verbose=verbose
-            )
-            map_soln = xo.optimize(
-                start=map_soln, vars=rho_star, verbose=verbose
-            )
-            map_soln = xo.optimize(
-                start=map_soln, vars=t14, verbose=verbose
-            )
-            map_soln = xo.optimize(
-                start=map_soln, verbose=verbose
-            )
+        map_soln = xo.optimize(
+            start=model.test_point, verbose=verbose
+        )
+        map_soln = xo.optimize(
+            start=map_soln, vars=[f0, period, t0, r], verbose=verbose
+        )
+        map_soln = xo.optimize(
+            start=map_soln, vars=rho_star, verbose=verbose
+        )
+        map_soln = xo.optimize(
+            start=map_soln, vars=t14, verbose=verbose
+        )
+        map_soln = xo.optimize(
+            start=map_soln, verbose=verbose
+        )
+
+    # Reset warning filter
+    warnings.resetwarnings()
 
     return model, map_soln
 
