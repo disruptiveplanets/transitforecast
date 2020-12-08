@@ -1,7 +1,8 @@
 """Forecasting transit events."""
 import astroplan as ap
 import exoplanet as xo
-import multiprocessing
+import joblib as jl
+import multiprocessing as mp
 import numpy as np
 import pandas as pd
 import pymc3 as pm
@@ -315,7 +316,7 @@ def get_map_soln(model, verbose=False):
     return map_soln
 
 
-def get_map_solns(models, verbose=False):
+def get_map_solns(models, verbose=False, loud=False):
     """
     Get the maximum a posteriori probability estimate of the parameters.
 
@@ -325,6 +326,9 @@ def get_map_solns(models, verbose=False):
         A list of `~pymc3.model` objects.
 
     verbose : bool, optional
+        Print details of multiprocessing.
+
+    loud : bool, optional
         Print details of optimization.
 
     Returns
@@ -332,13 +336,13 @@ def get_map_solns(models, verbose=False):
     map_solns : list
         A list of dictionaries with the MAP estimates for the models.
     """
-    inputs = []
-    for model in models:
-        inputs.append([model, verbose])
 
-    if __name__ == '__main__':
-        pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
-        map_solns = pool.starmap(get_map_soln, inputs)
+    n_cores = mp.cpu_count()
+    backend = jl.parallel_backend('multiprocessing')
+    with backend:
+        map_solns = jl.Parallel(n_jobs=n_cores, verbose=verbose)(
+            jl.delayed(get_map_soln)(model, loud) for model in models
+        )
 
     return map_solns
 
@@ -856,7 +860,7 @@ def sample_from_model(
     """
     # Use 1 CPU thread per chain, unless specified otherwise
     if cores is None:
-        cores = min(chains, multiprocessing.cpu_count())
+        cores = min(chains, mp.cpu_count())
 
     # Ignore FutureWarnings
     warnings.simplefilter('ignore', FutureWarning)
