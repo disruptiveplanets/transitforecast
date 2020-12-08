@@ -193,10 +193,10 @@ def build_model(
             (period/np.pi) *
             np.arcsin((r_star/orbit.a*sini) * np.sqrt((1.+r)**2 - b**2))
         )*24.*60.  # min
-        t14 = pm.Deterministic('t14', t14)
+        pm.Deterministic('t14', t14)
 
         # Track stellar density (in cgs units)
-        rho_star = pm.Deterministic('rho_star', orbit.rho_star)
+        pm.Deterministic('rho_star', orbit.rho_star)
 
         # Track stellar density (in units of solar density)
         rho_sol = (units.solMass/(4./3.*np.pi*units.solRad**3)).cgs.value
@@ -204,7 +204,7 @@ def build_model(
 
         # Track x2
         x2 = pm.math.sum(((lc.flux-lc_model)/lc.flux_err)**2)
-        x2 = pm.Deterministic('x2', x2)
+        pm.Deterministic('x2', x2)
 
 #         # Fit for variance
 #         logs2 = pm.Normal('logs2', mu=np.log(np.var(lc.flux)), sigma=1)
