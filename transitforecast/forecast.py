@@ -243,7 +243,7 @@ def build_models(lc, ephem, pri_m_star, pri_r_star, verbose=False):
 
     Returns
     -------
-    model : list
+    models : list
         A list of `~pymc3.model` objects.
     """
     # This cannot be done in parallel due to clashes
