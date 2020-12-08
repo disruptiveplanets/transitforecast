@@ -15,6 +15,10 @@ from scipy.stats import median_abs_deviation
 
 __all__ = [
     'build_model',
+    'build_models',
+    'get_map_soln',
+    'get_map_solns',
+    'build_model_and_get_map_soln',  # Should remove this at some point
     'flatten',
     'get_forecast_window',
     'get_priors_from_tic',
@@ -24,6 +28,322 @@ __all__ = [
 
 
 def build_model(
+    lc, pri_t0, pri_p, pri_rprs, pri_m_star, pri_r_star, verbose=False
+):
+    """
+    Build the transit light curve model.
+
+    Parameters
+    ----------
+    lc : `~lightkurve.LightCurve`
+        A light curve object with the data.
+
+    pri_t0 : float
+        Initial guess for mid-transit time.
+
+    pri_p : float
+        Initial guess for period.
+
+    pri_rprs : float
+        Initial guess for planet-to-star radius ratio.
+
+    pri_m_star : ndarray
+        Mean and standard deviation of the stellar mass estimate
+        in solar masses.
+
+    pri_r_star : ndarray
+        Mean and standard deviation of the stellar radius estimate
+        in solar radii.
+
+    verbose : bool, optional
+        Print details of optimization.
+
+    Returns
+    -------
+    model : `~pymc3.model`
+        A model object.
+    """
+    # Ignore warnings from theano, unless specified elsewise
+    if not verbose:
+        warnings.filterwarnings(
+            action='ignore',
+            category=FutureWarning,
+            module='theano'
+        )
+
+    # Ensure right data type for theano
+    dtype = np.dtype('float64')
+    dts = [arr.dtype for arr in [lc.time, lc.flux, lc.flux_err]]
+    if not all(dt is dtype for dt in dts):
+        lc.time = np.array(lc.time, dtype=dtype)
+        lc.flux = np.array(lc.flux, dtype=dtype)
+        lc.flux_err = np.array(lc.flux_err, dtype=dtype)
+
+    # Estimate flux uncertainties if not given
+    idx_nan = np.isnan(lc.flux_err)
+    if idx_nan.any():
+        mad = median_abs_deviation(lc.flux, scale='normal')
+        lc.flux_err[idx_nan] = mad
+
+    # Define the model for the light curve
+    with pm.Model() as model:
+        # Stellar mass
+        m_star = pm.Normal(
+            'm_star',
+            mu=pri_m_star[0],
+            sigma=pri_m_star[1]
+        )
+
+        # Stellar radius
+        r_star = pm.Normal(
+            'r_star',
+            mu=pri_r_star[0],
+            sigma=pri_r_star[1]
+        )
+
+        # Quadratic limb-darkening parameters
+        u = xo.distributions.QuadLimbDark(
+            'u',
+            testval=np.array([0.3, 0.2])
+        )
+
+        # Radius ratio
+        r = pm.Uniform(
+            'r',
+            lower=0.,
+            upper=1.,
+            testval=pri_rprs
+        )
+
+        # Impact parameter
+        b = xo.distributions.ImpactParameter(
+            'b',
+            ror=r,
+        )
+
+        # Period
+        logperiod = pm.Uniform(
+            'logperiod',
+            lower=-2.3,  # 0.1 d
+            upper=3.4,  # 30 d
+            testval=np.log(pri_p)
+        )
+        period = pm.Deterministic('period', tt.exp(logperiod))
+
+        # Mid-transit time
+        t0 = pm.Uniform(
+            't0',
+            lower=lc.time.min(),
+            upper=lc.time.max(),
+            testval=pri_t0
+        )
+
+        # Keplerian orbit
+        orbit = xo.orbits.KeplerianOrbit(
+            m_star=m_star,
+            r_star=r_star,
+            period=period,
+            t0=t0,
+            b=b
+        )
+
+        # Model transit light curve
+        light_curves = xo.LimbDarkLightCurve(
+            u).get_light_curve(orbit=orbit, r=r*r_star, t=lc.time)
+        transit_model = pm.math.sum(light_curves, axis=-1)
+
+        # The baseline flux
+        f0 = pm.Normal(
+            'f0',
+            mu=np.median(lc.flux),
+            sigma=median_abs_deviation(lc.flux, scale='normal')
+        )
+
+        # The full model
+        lc_model = transit_model + f0
+
+        #######################
+        # Track some parameters
+        #######################
+
+        # Track transit depth
+        pm.Deterministic('depth', r**2)
+
+        # Track planet radius (in Earth radii)
+        pm.Deterministic(
+            'rearth',
+            r*r_star*(units.solRad/units.earthRad).si.scale
+        )
+
+        # Track semimajor axis (in AU)
+        au_per_rsun = (units.solRad/units.AU).si.scale
+        pm.Deterministic('a', orbit.a*au_per_rsun)
+
+        # Track system scale
+        pm.Deterministic('aRs', orbit.a/r_star)  # normalize by stellar radius
+
+        # Track inclination
+        pm.Deterministic('incl', np.rad2deg(orbit.incl))
+
+        # Track transit duration
+        # Seager and Mallen-Ornelas (2003) Eq. 3
+        sini = np.sin(orbit.incl)
+        t14 = (
+            (period/np.pi) *
+            np.arcsin((r_star/orbit.a*sini) * np.sqrt((1.+r)**2 - b**2))
+        )*24.*60.  # min
+        t14 = pm.Deterministic('t14', t14)
+
+        # Track stellar density (in cgs units)
+        rho_star = pm.Deterministic('rho_star', orbit.rho_star)
+
+        # Track stellar density (in units of solar density)
+        rho_sol = (units.solMass/(4./3.*np.pi*units.solRad**3)).cgs.value
+        pm.Deterministic('rho_star_sol', orbit.rho_star/rho_sol)
+
+        # Track x2
+        x2 = pm.math.sum(((lc.flux-lc_model)/lc.flux_err)**2)
+        x2 = pm.Deterministic('x2', x2)
+
+#         # Fit for variance
+#         logs2 = pm.Normal('logs2', mu=np.log(np.var(lc.flux)), sigma=1)
+#         sigma = pm.Deterministic('sigma', pm.math.sqrt(pm.math.exp(logs2)))
+
+        # The likelihood function
+        pm.Normal('obs', mu=lc_model, sigma=lc.flux_err, observed=lc.flux)
+
+    # Reset warning filter
+    warnings.resetwarnings()
+
+    return model
+
+
+def build_models(lc, ephem, pri_m_star, pri_r_star, verbose=False):
+    """
+    Build all transit light curve models.
+
+    Parameters
+    ----------
+    lc : `~lightkurve.LightCurve`
+        A light curve object with the data.
+
+    ephem : pandas.DataFrame
+        The trial ephemerides.
+
+    pri_m_star : ndarray
+        Mean and standard deviation of the stellar mass estimate
+        in solar masses.
+
+    pri_r_star : ndarray
+        Mean and standard deviation of the stellar radius estimate
+        in solar radii.
+
+    verbose : bool, optional
+        Print details of optimization.
+
+    Returns
+    -------
+    model : list
+        A list of `~pymc3.model` objects.
+    """
+    # This cannot be done in parallel due to clashes
+    # with the theano.gof.compilelock.
+    models = []
+    for i, ep in ephem.iterrows():
+        model = build_model(
+            lc, ep.t0, ep.period, ep.rprs, pri_m_star, pri_r_star, verbose
+        )
+        models.append(model)
+
+    return models
+
+
+def get_map_soln(model, verbose=False):
+    """
+    Get the maximum a posteriori probability estimate of the parameters.
+
+    Parameters
+    ----------
+    model : `~pymc3.model`
+        The model object.
+
+    verbose : bool, optional
+        Print details of optimization.
+
+    Returns
+    -------
+    map_soln : dict
+        A dictionary with the maximum a posteriori estimates of the variables.
+    """
+    # Ignore warnings from theano, unless specified elsewise
+    if not verbose:
+        warnings.filterwarnings(
+            action='ignore',
+            category=FutureWarning,
+            module='theano'
+        )
+
+    with model:
+        # Fit for the maximum a posteriori parameters
+        map_soln = xo.optimize(
+            start=model.test_point,
+            verbose=verbose
+        )
+        map_soln = xo.optimize(
+            start=map_soln,
+            vars=[model.f0, model.period, model.t0, model.r],
+            verbose=verbose
+        )
+        map_soln = xo.optimize(
+            start=map_soln,
+            vars=model.rho_star,
+            verbose=verbose
+        )
+        map_soln = xo.optimize(
+            start=map_soln,
+            vars=model.t14,
+            verbose=verbose
+        )
+        map_soln = xo.optimize(
+            start=map_soln,
+            verbose=verbose
+        )
+
+    # Reset warning filter
+    warnings.resetwarnings()
+
+    return map_soln
+
+
+def get_map_solns(models, verbose=False):
+    """
+    Get the maximum a posteriori probability estimate of the parameters.
+
+    Parameters
+    ----------
+    models : list
+        A list of `~pymc3.model` objects.
+
+    verbose : bool, optional
+        Print details of optimization.
+
+    Returns
+    -------
+    map_solns : list
+        A list of dictionaries with the MAP estimates for the models.
+    """
+    inputs = []
+    for model in models:
+        inputs.append([model, verbose])
+
+    if __name__ == '__main__':
+        pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
+        map_solns = pool.starmap(get_map_soln, inputs)
+
+    return map_solns
+
+
+def build_model_and_get_map_soln(
     lc, pri_t0, pri_p, pri_rprs, pri_m_star, pri_r_star, verbose=False
 ):
     """
