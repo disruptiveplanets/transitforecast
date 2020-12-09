@@ -20,6 +20,7 @@ __all__ = [
     'get_map_soln',
     'get_map_solns',
     'build_model_and_get_map_soln',  # Should remove this at some point
+    'downselect',
     'flatten',
     'get_forecast_window',
     'get_priors_from_tic',
@@ -586,6 +587,55 @@ def build_model_and_get_map_soln(
     warnings.resetwarnings()
 
     return model, map_soln
+
+
+def downselect(models, map_solns, n_data, n_param, threshold=1e-6):
+    """
+    Downselect the models to test using the BMA weights.
+
+    Parameters
+    ----------
+    models : list
+        A list of `~pymc3.model` objects.
+
+    map_solns : list
+        A list of MAP estimates.
+
+    n_data : int
+        The number of data points.
+
+    n_param : int
+        The number of parameters in the model
+
+    threshold : float, optional
+        The threshold for ignoring low-weighted scenarios. Defaults to 1 ppm.
+
+    Returns
+    -------
+    models_subset : list
+        The subset of `~pymc3.model` objects.
+
+    map_solns_subset : list
+        The subset of dictionaries with the MAP estimates for the models.
+    """
+    # Calculate BICs and weights
+    lnlikes = np.array([
+        model.logp(map_soln) for model, map_soln in zip(models, map_solns)
+    ])
+    bics = np.log(n_data) * n_param - 2 * lnlikes
+    dbics = bics - np.min(bics)
+    weights = np.exp(dbics / -2) / np.sum(np.exp(dbics / -2))
+
+    # Downselect
+    idx_subset = np.where(np.array(weights) > threshold)[0]
+    models_subset = [
+        models[i] for i in idx_subset
+    ]
+    map_solns_subset = [
+        map_solns[i] for i in idx_subset
+    ]
+
+    return models_subset, map_solns_subset
 
 
 def flatten(
