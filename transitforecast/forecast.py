@@ -280,7 +280,7 @@ def get_map_soln(model, verbose=False, ignore_warnings=True):
         A dictionary with the maximum a posteriori estimates of the variables.
     """
     # Ignore warnings from theano, unless specified elsewise
-    if not ignore_warnings:
+    if ignore_warnings:
         warnings.filterwarnings(
             action='ignore',
             category=FutureWarning,
