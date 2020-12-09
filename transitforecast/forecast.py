@@ -259,7 +259,7 @@ def build_models(lc, ephem, pri_m_star, pri_r_star, verbose=False):
     return models
 
 
-def get_map_soln(model, verbose=False):
+def get_map_soln(model, verbose=False, ignore_warnings=True):
     """
     Get the maximum a posteriori probability estimate of the parameters.
 
@@ -271,13 +271,16 @@ def get_map_soln(model, verbose=False):
     verbose : bool, optional
         Print details of optimization.
 
+    ignore_warnings : bool, optional
+        Silence warnings.
+
     Returns
     -------
     map_soln : dict
         A dictionary with the maximum a posteriori estimates of the variables.
     """
     # Ignore warnings from theano, unless specified elsewise
-    if not verbose:
+    if not ignore_warnings:
         warnings.filterwarnings(
             action='ignore',
             category=FutureWarning,
@@ -316,7 +319,34 @@ def get_map_soln(model, verbose=False):
     return map_soln
 
 
-def get_map_solns(models, verbose=False, loud=False):
+def get_map_solns(models, verbose=False, ignore_warnings=True):
+    """
+    Get the MAP estimates for a list of models.
+
+    Parameters
+    ----------
+    models : list
+        A list of `~pymc3.model` objects.
+
+    verbose : bool, optional
+        Print details of optimization.
+
+    ignore_warnings : bool, optional
+        Silence warnings.
+
+    Returns
+    -------
+    map_solns : list
+        A list of dictionaries with the MAP estimates for the models.
+    """
+    map_solns = [
+        get_map_soln(model, verbose, ignore_warnings) for model in models
+    ]
+
+    return map_solns
+
+
+def get_map_solns_mp(models, verbose=False, loud=False):
     """
     Get the maximum a posteriori probability estimate of the parameters.
 
