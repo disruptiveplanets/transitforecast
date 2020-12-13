@@ -19,6 +19,7 @@ __all__ = [
     'build_models',
     'get_map_soln',
     'get_map_solns',
+    'get_map_solns_mp',
     'build_model_and_get_map_soln',  # Should remove this at some point
     'downselect',
     'flatten',
