@@ -590,7 +590,9 @@ def build_model_and_get_map_soln(
     return model, map_soln
 
 
-def downselect(models, map_solns, n_data, n_param, threshold=1e-6):
+def downselect(
+    models, map_solns, n_data, n_param, threshold=1e-6, return_idx=False
+):
     """
     Downselect the models to test using the BMA weights.
 
@@ -611,6 +613,9 @@ def downselect(models, map_solns, n_data, n_param, threshold=1e-6):
     threshold : float, optional
         The threshold for ignoring low-weighted scenarios. Defaults to 1 ppm.
 
+    return_idx : bool, optional
+        Return the indices of the top models.
+
     Returns
     -------
     models_subset : list
@@ -618,6 +623,9 @@ def downselect(models, map_solns, n_data, n_param, threshold=1e-6):
 
     map_solns_subset : list
         The subset of dictionaries with the MAP estimates for the models.
+
+    idx_subset : ndarray
+        Indices of the top models. Only returned if ``return_idx`` is `True`.
     """
     # Calculate BICs and weights
     lnlikes = np.array([
@@ -636,7 +644,11 @@ def downselect(models, map_solns, n_data, n_param, threshold=1e-6):
         map_solns[i] for i in idx_subset
     ]
 
-    return models_subset, map_solns_subset
+    if return_idx:
+        return models_subset, map_solns_subset, idx_subset
+
+    else:
+        return models_subset, map_solns_subset
 
 
 def flatten(
