@@ -27,7 +27,8 @@ __all__ = [
     'get_priors_from_tic',
     'get_trial_ephemerides',
     'sample_from_model',
-    'sample_from_models'
+    'sample_from_models',
+    'sample_from_models_mp'
 ]
 
 
@@ -1002,5 +1003,44 @@ def sample_from_models(models, map_solns, **kwargs):
         sample_from_model(model, map_soln, **kwargs)
         for model, map_soln in zip(models, map_solns)
     ]
+
+    return traces
+
+
+def sample_from_models_mp(models, map_solns, draws=500, chains=2):
+    """
+    Sample from a list of models using multiprocessing.
+
+    Parameters
+    ----------
+    models : list
+        A list of `~pymc3.model` objects.
+
+    map_solns : list
+        A list of dictionaries with the MAP estimates for the models.
+
+    draws : int, optional
+        The number of samples to draw.
+
+    chains : int, optional
+        The number of chains to sample.
+
+    Returns
+    -------
+    traces : list
+        A list of ``MultiTrace`` objects that contain the samples.
+    """
+    kwargs = {
+        'draws': draws,
+        'chains': chains,
+        'cores': 1  # Can't use more than 1 core/chain within subprocesses
+    }
+    n_cores = mp.cpu_count()
+    backend = jl.parallel_backend('multiprocessing')
+    with backend:
+        traces = jl.Parallel(n_jobs=n_cores)(
+            jl.delayed(sample_from_model)(model, map_soln, **kwargs)
+            for model, map_soln in zip(models, map_solns)
+        )
 
     return traces
