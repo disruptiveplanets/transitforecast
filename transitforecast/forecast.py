@@ -26,7 +26,8 @@ __all__ = [
     'get_forecast_window',
     'get_priors_from_tic',
     'get_trial_ephemerides',
-    'sample_from_model'
+    'sample_from_model',
+    'sample_from_models'
 ]
 
 
@@ -975,3 +976,31 @@ def sample_from_model(
     warnings.resetwarnings()
 
     return trace
+
+
+def sample_from_models(models, map_solns, **kwargs):
+    """
+    Sample from a list of models.
+
+    Parameters
+    ----------
+    models : list
+        A list of `~pymc3.model` objects.
+
+    map_solns : list
+        A list of dictionaries with the MAP estimates for the models.
+
+    **kwargs
+        Additional keyword arguments passed to ``sample_from_model``.
+
+    Returns
+    -------
+    traces : list
+        A list of ``MultiTrace`` objects that contain the samples.
+    """
+    traces = [
+        sample_from_model(model, map_soln, **kwargs)
+        for model, map_soln in zip(models, map_solns)
+    ]
+
+    return traces
