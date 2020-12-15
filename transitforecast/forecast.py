@@ -17,6 +17,7 @@ from scipy.stats import median_abs_deviation
 __all__ = [
     'build_model',
     'build_models',
+    'build_models_mp',
     'get_map_soln',
     'get_map_solns',
     'get_map_solns_mp',
@@ -259,6 +260,50 @@ def build_models(lc, ephem, pri_m_star, pri_r_star, verbose=False):
             lc, ep.t0, ep.period, ep.rprs, pri_m_star, pri_r_star, verbose
         )
         models.append(model)
+
+    return models
+
+
+def build_models_mp(lc, ephem, pri_m_star, pri_r_star, verbose=False):
+    """
+    Build all transit light curve models using multiprocessing.
+
+    Parameters
+    ----------
+    lc : `~lightkurve.LightCurve`
+        A light curve object with the data.
+
+    ephem : pandas.DataFrame
+        The trial ephemerides.
+
+    pri_m_star : ndarray
+        Mean and standard deviation of the stellar mass estimate
+        in solar masses.
+
+    pri_r_star : ndarray
+        Mean and standard deviation of the stellar radius estimate
+        in solar radii.
+
+    verbose : bool, optional
+        Print details of optimization.
+
+    Returns
+    -------
+    models : list
+        A list of `~pymc3.model` objects.
+    """
+    kwargs = {
+        'pri_m_star': pri_m_star,
+        'pri_r_star': pri_r_star,
+        'verbose': verbose
+    }
+    n_cores = mp.cpu_count()
+    backend = jl.parallel_backend('multiprocessing')
+    with backend:
+        models = jl.Parallel(n_jobs=n_cores)(
+            jl.delayed(build_model)(lc, t0, period, rprs, **kwargs)
+            for t0, period, rprs in zip(ephem.t0, ephem.period, ephem.rprs)
+        )
 
     return models
 
